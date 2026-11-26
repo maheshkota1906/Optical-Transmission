@@ -5705,7 +5705,7 @@
         overlay.setAttribute('aria-hidden','true');
         if (frame) frame.src = 'about:blank';
         const app = window.app;
-        if (app && app.currentState === AppState.EXPLORE && !app.isTouchCapableDevice && app.pointerControls) app.pointerControls.lock();
+        if (app && app.currentState === 'explore' && !app.isTouchCapableDevice && app.pointerControls) app.pointerControls.lock();
       };
       window.hciaAppForEquipment = product => {
         const name = String(product && product.name || '').toLowerCase();
