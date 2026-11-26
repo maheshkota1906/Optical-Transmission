@@ -497,8 +497,7 @@
   <!-- Product Callout: dot + stem + card, anchored to the selected product -->
   <div id="callout-root" class="hidden fixed inset-0 z-30 pointer-events-none">
     <svg id="callout-svg" class="absolute inset-0 w-full h-full"><line id="callout-line" stroke="var(--sel)" stroke-width="1.5" stroke-linecap="round"/></svg>
-    <div id="callout-dot" class="absolute w-2.5 h-2.5 -ml-[5px] -mt-[5px] rounded-full sel-dot"></div>
-    <aside id="product-callout" class="absolute glass-panel rounded-2xl pointer-events-auto">
+    <div id="callout-dot" class="absolute w-2.5 h-2.5 -ml-[5px] -mt-[5px] rounded-full sel-dot"></div>    <aside id="product-callout" class="absolute glass-panel rounded-2xl pointer-events-auto">
       <div id="slideshow" class="relative h-64 sm:h-72 bg-neutral-100 overflow-hidden hidden rounded-t-2xl">
         <div id="slides" class="flex h-full transition-transform duration-300 ease-out"></div>
         <canvas id="preview-canvas" class="absolute inset-0 w-full h-full cursor-grab touch-none"></canvas>
@@ -997,8 +996,7 @@
       if (!mat) return;
       Object.keys(mat).forEach((k) => {
         if (mat[k] && typeof mat[k].dispose === 'function') {
-          mat[k].dispose();        }
-      });
+          mat[k].dispose();        }      });
       mat.dispose();
     }
   }
@@ -1498,7 +1496,6 @@
 
       this.camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 120);
       this.camera.rotation.order = 'YXZ'; // Yaw then pitch
-
       this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
       this.renderer.setSize(window.innerWidth, window.innerHeight);
       this.renderer.shadowMap.enabled = true;
@@ -1997,8 +1994,7 @@
        GLB Upload & Normalized Hierarchy Resolver
        ------------------------------------------------------------------------ */
     demoImages(label, hue, n = 3) {      const text = String(label).replace(/[<>&]/g, '');
-      return Array.from({ length: n }, (_, i) => {
-        const h = (hue + i * 28) % 360;
+      return Array.from({ length: n }, (_, i) => {        const h = (hue + i * 28) % 360;
         const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='600' height='360'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='hsl(${h},18%,78%)'/><stop offset='1' stop-color='hsl(${h},24%,42%)'/></linearGradient></defs><rect width='600' height='360' fill='url(#g)'/><text x='300' y='176' font-family='Arial' font-size='34' font-weight='700' fill='white' text-anchor='middle'>${text}</text><text x='300' y='218' font-family='Arial' font-size='20' fill='white' fill-opacity='0.8' text-anchor='middle'>Photo ${i + 1}</text></svg>`;
         return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
       });
@@ -2497,8 +2493,7 @@
     animActions(p) {
       const lv = this.currentLevel, a = [];
       if (lv && lv.mixer) p.clips.forEach((c) => a.push(lv.mixer.clipAction(c)));
-      if (this.preview && this.preview.actions) a.push(...this.preview.actions);
-      return a;
+      if (this.preview && this.preview.actions) a.push(...this.preview.actions);      return a;
     }
 
     initAnimUI(p) {
@@ -2998,7 +2993,6 @@
       this.cameraAnim.targetLookAt.copy(center);
       this.cameraAnim.progress = 0;
     }
-
     /* ------------------------------------------------------------------------
        State Management Transitions
        ------------------------------------------------------------------------ */
@@ -3497,8 +3491,7 @@
         this.camera.position.copy(c.target);
         if (c.exitTarget) {
           c.start = c.target.clone();
-          c.target = c.exitTarget.clone();
-          c.exitTarget = null;
+          c.target = c.exitTarget.clone();          c.exitTarget = null;
           c.elapsed = 0;
           c.duration = Math.max(1.4, c.start.distanceTo(c.target) / 3.2);
           c.startYaw = this.cameraYaw;
@@ -3997,8 +3990,7 @@
           const pr = new THREE.Raycaster(
             new THREE.Vector3(px, Math.max(top, pb.max.y + 1), pz),
             new THREE.Vector3(0, -1, 0), 0, Math.max(3, pb.max.y - pb.min.y + 3)
-          );
-          const ph = pr.intersectObject(platformRoot, true).find((h) => {
+          );          const ph = pr.intersectObject(platformRoot, true).find((h) => {
             if (!h.object.visible || h.object.userData.isOutline || !h.face) return false;
             const n = h.face.normal.clone();
             n.applyMatrix3(new THREE.Matrix3().getNormalMatrix(h.object.matrixWorld)).normalize();
@@ -4497,8 +4489,7 @@
       this.slideIdx = (i + this.slideCount) % this.slideCount;
       this.ui.slides.style.transform = `translateX(-${this.slideIdx * 100}%)`;
       Array.from(this.ui.dots.children).forEach((d, k) => {
-        d.className = 'h-1.5 rounded-full bg-white transition-all ' + (k === this.slideIdx ? 'w-4' : 'w-1.5 opacity-60');
-      });
+        d.className = 'h-1.5 rounded-full bg-white transition-all ' + (k === this.slideIdx ? 'w-4' : 'w-1.5 opacity-60');      });
     }
 
     startSlides() {
@@ -4997,8 +4988,7 @@
         document.getElementById('sp-settings-btn')?.classList.remove('hidden');
         this.toggleSettings(true);
         return true;
-      } catch (err) {
-        window.alert('Could not verify the password in this browser.');
+      } catch (err) {        window.alert('Could not verify the password in this browser.');
         return false;
       }
     }
@@ -5248,5 +5238,89 @@
     window.app = new WalkthroughApp();
   });
   </script>
+
+  <!-- Optical Transmission site selection screen -->
+  <style>
+    #site-selection-screen{position:fixed;inset:0;z-index:70;display:none;overflow-y:auto;background:radial-gradient(circle at 15% 10%,rgba(0,190,255,.18),transparent 32%),linear-gradient(135deg,#06111d 0%,#0a1d2b 55%,#07111c 100%);color:#eef8ff;font-family:Inter,sans-serif}
+    #site-selection-screen.is-open{display:block}
+    #site-selection-screen *{box-sizing:border-box}
+    .ots-wrap{width:min(1180px,100%);min-height:100%;margin:auto;padding:clamp(20px,4vw,52px);display:flex;flex-direction:column;justify-content:center;gap:24px}
+    .ots-topline{display:flex;align-items:center;justify-content:space-between;gap:14px;color:#8db7cb;font:700 10px/1.4 Inter,sans-serif;letter-spacing:.24em;text-transform:uppercase}
+    .ots-live{display:inline-flex;align-items:center;gap:8px;color:#8ee9ff}
+    .ots-live:before{content:"";width:7px;height:7px;border-radius:50%;background:#45e0c0;box-shadow:0 0 14px #45e0c0}
+    .ots-heading{text-align:center;margin:0 auto;max-width:760px}
+    .ots-heading h2{margin:0;color:#f4fbff;font:800 clamp(34px,6vw,62px)/1.02 Outfit,Inter,sans-serif;letter-spacing:-.04em}
+    .ots-heading h2 span{color:#48cfff}
+    .ots-heading p{margin:14px auto 0;color:#a8bfce;font-size:14px;line-height:1.7;max-width:590px}
+    .ots-map-frame{position:relative;width:100%;overflow:hidden;border:1px solid rgba(108,196,231,.32);border-radius:22px;background:rgba(5,16,27,.82);box-shadow:0 24px 80px rgba(0,0,0,.38),0 0 42px rgba(0,165,220,.08)}
+    .ots-map-frame:before{content:"NETWORK SITE OVERVIEW";position:absolute;z-index:1;left:16px;top:14px;padding:7px 10px;border:1px solid rgba(120,205,240,.3);border-radius:7px;background:rgba(4,17,29,.78);color:#a9e9ff;font:700 9px Inter,sans-serif;letter-spacing:.16em}
+    .ots-map-image{display:block;width:100%;height:clamp(220px,42vw,480px);object-fit:contain;background:#071522}
+    .ots-map-caption{display:flex;justify-content:space-between;gap:12px;padding:10px 15px;border-top:1px solid rgba(108,196,231,.2);color:#7e9cac;font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+    .ots-choice-label{text-align:center;color:#9bb8c8;font:700 10px Inter,sans-serif;letter-spacing:.22em;text-transform:uppercase;margin:2px 0 -10px}
+    .ots-site-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;width:min(760px,100%);margin:0 auto}
+    .ots-site-button{position:relative;display:flex;align-items:center;gap:16px;min-height:104px;padding:18px 20px;border:1px solid rgba(116,197,231,.34);border-radius:16px;background:linear-gradient(135deg,rgba(14,48,68,.92),rgba(8,28,43,.94));color:#effaff;text-align:left;cursor:pointer;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease,background .2s ease}
+    .ots-site-button:hover{transform:translateY(-3px);border-color:#48cfff;box-shadow:0 12px 32px rgba(0,160,220,.18);background:linear-gradient(135deg,rgba(17,67,91,.98),rgba(8,34,52,.98))}
+    .ots-site-button:focus-visible{outline:3px solid #6ee7ff;outline-offset:3px}
+    .ots-site-code{display:grid;place-items:center;flex:none;width:54px;height:54px;border:1px solid rgba(91,210,255,.5);border-radius:13px;background:rgba(39,177,225,.12);color:#62d7ff;font:800 20px Outfit,sans-serif;box-shadow:inset 0 0 20px rgba(41,184,235,.08)}
+    .ots-site-copy{display:flex;flex:1;flex-direction:column;gap:5px}
+    .ots-site-copy strong{font:700 18px Outfit,sans-serif;letter-spacing:.01em}
+    .ots-site-copy small{color:#9bb6c5;font-size:11px;line-height:1.45}
+    .ots-site-arrow{color:#65d9ff;font-size:20px}
+    .ots-footer{text-align:center;color:#668496;font-size:10px;letter-spacing:.08em}
+    @media(max-width:620px){.ots-wrap{gap:18px}.ots-topline{font-size:8px}.ots-site-grid{grid-template-columns:1fr}.ots-site-button{min-height:88px;padding:14px}.ots-map-image{height:260px}.ots-heading p{font-size:12px}}
+  </style>
+  <section id="site-selection-screen" aria-label="Optical Transmission site selection" aria-hidden="true">
+    <div class="ots-wrap">
+      <div class="ots-topline"><span>OPTICAL TRANSMISSION · NETWORK OVERVIEW</span><span class="ots-live">SITE SELECTION</span></div>
+      <div class="ots-heading">
+        <h2>Select Your <span>Site</span></h2>
+        <p>Choose the Optical Transmission location you want to explore. Select AQ or HA to enter its 3D environment.</p>
+      </div>
+      <div class="ots-map-frame">
+        <img class="ots-map-image" src="https://raw.githubusercontent.com/maheshkota1906/Optical-Transmission/main/Neon%20Mountain%20Network%20Site%20Selection.png" alt="Neon Mountain Network Site Selection map showing the AQ and HA network sites" loading="eager">
+        <div class="ots-map-caption"><span>Network site selection map</span><span>Choose one location below</span></div>
+      </div>
+      <div class="ots-choice-label">Choose a destination</div>
+      <div class="ots-site-grid">
+        <button class="ots-site-button" type="button" data-optical-site="AQ" aria-label="Enter AQ site">
+          <span class="ots-site-code">AQ</span><span class="ots-site-copy"><strong>AQ Site</strong><small>Open the AQ Optical Transmission environment</small></span><span class="ots-site-arrow" aria-hidden="true">→</span>
+        </button>
+        <button class="ots-site-button" type="button" data-optical-site="HA" aria-label="Enter HA site">
+          <span class="ots-site-code">HA</span><span class="ots-site-copy"><strong>HA Site</strong><small>Open the HA Optical Transmission environment</small></span><span class="ots-site-arrow" aria-hidden="true">→</span>
+        </button>
+      </div>
+      <div class="ots-footer">OPTICAL TRANSMISSION · INTERACTIVE 3D EXPERIENCE</div>
+    </div>
+  </section>
+  <script>
+    (() => {
+      let bypassSiteGate = false;
+      const enterButton = document.getElementById('sp-enter');
+      const selection = document.getElementById('site-selection-screen');
+      if (!enterButton || !selection) return;
+
+      // Intercept the first showroom click and show the network map.
+      enterButton.addEventListener('click', event => {
+        if (bypassSiteGate) { bypassSiteGate = false; return; }
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        selection.classList.add('is-open');
+        selection.setAttribute('aria-hidden', 'false');
+      }, true);
+
+      selection.querySelectorAll('[data-optical-site]').forEach(button => {
+        button.addEventListener('click', () => {
+          const site = button.dataset.opticalSite;
+          window.selectedOpticalSite = site;
+          document.documentElement.dataset.opticalSite = site.toLowerCase();
+          selection.classList.remove('is-open');
+          selection.setAttribute('aria-hidden', 'true');
+          bypassSiteGate = true;
+          enterButton.click();
+        });
+      });
+    })();
+  </script>
+
 </body>
 </html>
