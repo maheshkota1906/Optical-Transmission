@@ -4561,11 +4561,12 @@
     initPreview() {
       const cv = document.getElementById('preview-canvas');
       const r = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true });
-      r.outputEncoding = THREE.sRGBEncoding; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.05;
+      r.outputEncoding = THREE.sRGBEncoding; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 0.78;
       const sc = new THREE.Scene(); sc.environment = buildEnvTexture(r);
-      const key = new THREE.DirectionalLight(0xffffff, 1.1); key.position.set(3, 4, 5);
-      const rim = new THREE.DirectionalLight(0xbcd0ff, 0.6); rim.position.set(-4, 2, -3);
-      sc.add(key, rim, new THREE.AmbientLight(0xffffff, 0.2));
+      // Softer inspection lighting keeps the GLB's authored colours and surface details readable.
+      const key = new THREE.DirectionalLight(0xffffff, 0.62); key.position.set(3, 4, 5);
+      const rim = new THREE.DirectionalLight(0xbcd0ff, 0.22); rim.position.set(-4, 2, -3);
+      sc.add(key, rim, new THREE.AmbientLight(0xffffff, 0.12));
       const pivot = new THREE.Group(); sc.add(pivot);
       const c = document.createElement('canvas'); c.width = c.height = 128;
       const x = c.getContext('2d'), gr = x.createRadialGradient(64, 64, 0, 64, 64, 64);
