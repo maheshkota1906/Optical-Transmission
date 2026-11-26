@@ -1982,8 +1982,8 @@
         optical: 'Optical Transmission Room', odf: 'ODF & Fiber Patching Room', nms: 'Network Monitoring Room',
         server: 'Server Room', ups: 'UPS & Battery Room', monitoring: 'Network Monitoring Room'
       };
-      const levelName = code === 'AQ' ? 'AQ Site · Optical Transmission Room' : 'HA Site · Server Room';
-      const replacementPath = 'Assets/Rooms/AQ_optical_Room.glb';
+      const levelName = code === 'AQ' ? 'AQ Site · Server Room' : 'HA Site · Server Room';
+      const replacementPath = 'Assets/Rooms/ServerRoom_Optimized_under20MB.glb';
       try {
         const replacementUrl = new URL(replacementPath, location.href);
         const fileName = replacementPath.split('/').pop();
@@ -2019,8 +2019,10 @@
           return this.currentLevel;
         }
       } catch (err) {
-        console.warn('[Optical Transmission] AQ optical GLB unavailable; using the built-in optical sample room.', err);
+        console.error('[Optical Transmission] Your ServerRoom GLB could not be loaded; refusing to show the old placeholder room.', err);
         this.hideLoading();
+        alert('Your ServerRoom GLB could not be loaded. Check the deployed file Assets/Rooms/ServerRoom_Optimized_under20MB.glb and refresh. No placeholder room will be shown.');
+        return null;
       }
       const level = new Level('sample-' + code.toLowerCase() + '-' + key, levelName);
       const root = level.rootGroup;
