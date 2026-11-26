@@ -1969,7 +1969,7 @@
 
 
     /* Optical Transmission sample room builder. Replace the generated geometry with site GLBs later. */
-    openOpticalSampleRoom(site, roomKey) {
+    async openOpticalSampleRoom(site, roomKey) {
       const code = site === 'HA' ? 'HA' : 'AQ';
       const key = roomKey || (code === 'AQ' ? 'optical' : 'server');
       const roomNames = {
