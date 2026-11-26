@@ -1976,7 +1976,26 @@
         optical: 'Optical Transmission Room', odf: 'ODF & Fiber Patching Room', nms: 'Network Monitoring Room',
         server: 'Server Room', ups: 'UPS & Battery Room', monitoring: 'Network Monitoring Room'
       };
-      const level = new Level('sample-' + code.toLowerCase() + '-' + key, code + ' Site · ' + roomNames[key]);
+      const levelName = code + ' Site · ' + roomNames[key];
+      const replacementPath = 'Assets/Rooms/' + code + '_' + key + '_Room.glb';
+      try {
+        const replacementUrl = new URL(replacementPath, location.href);
+        const response = await fetch(replacementUrl.href, { cache: 'no-cache' });
+        if (response.ok) {
+          this.showLoading('Loading ' + roomNames[key], 'Loading your replacement GLB...');
+          await this.parseAndSetup(await response.arrayBuffer(), new URL('.', replacementUrl).href, null, replacementPath.split('/').pop());
+          this.hideLoading();
+          this.setAppState(AppState.EXPLORE);
+          const startPage=document.getElementById('start-page');if(startPage){startPage.classList.add('opacity-0');startPage.style.pointerEvents='none';setTimeout(()=>{startPage.style.display='none';},400);}
+          const siteScreen=document.getElementById('site-selection-screen');if(siteScreen){siteScreen.classList.remove('is-open');siteScreen.setAttribute('aria-hidden','true');}
+          const roomScreen=document.getElementById('room-selection-screen');if(roomScreen){roomScreen.classList.remove('is-open');roomScreen.setAttribute('aria-hidden','true');}
+          if(!this.isTouchCapableDevice&&this.pointerControls)this.pointerControls.lock();
+          return this.currentLevel;
+        }
+      } catch (err) {
+        console.warn('[Optical Transmission] Replacement GLB unavailable; using procedural sample geometry.', err);
+      }
+      const level = new Level('sample-' + code.toLowerCase() + '-' + key, levelName);
       const root = level.rootGroup;
       const mat = {
         floor:new THREE.MeshStandardMaterial({color:0x26343d,roughness:.84}),
