@@ -1985,10 +1985,32 @@
       const replacementPath = code === 'AQ' ? 'Assets/Rooms/ServerRoom_Optimized_under20MB.glb' : ('Assets/Rooms/' + code + '_' + key + '_Room.glb');
       try {
         const replacementUrl = new URL(replacementPath, location.href);
-        const response = await fetch(replacementUrl.href, { cache: 'no-cache' });
-        if (response.ok) {
+        const fileName = replacementPath.split('/').pop();
+        const assetCandidates = code === 'AQ'
+          ? [replacementUrl.href, 'https://raw.githubusercontent.com/maheshkota1906/Optical-Transmission/main/' + replacementPath]
+          : [replacementUrl.href];
+        let roomBuffer = null;
+        let roomBasePath = new URL('.', replacementUrl).href;
+        let lastAssetError = null;
+        for (const assetUrl of assetCandidates) {
+          try {
+            const response = await fetch(assetUrl, { cache: 'no-cache' });
+            if (!response.ok) throw new Error('HTTP ' + response.status + ' for ' + assetUrl);
+            const candidateBuffer = await response.arrayBuffer();
+            const magic = new TextDecoder().decode(new Uint8Array(candidateBuffer, 0, Math.min(4, candidateBuffer.byteLength)));
+            if (magic !== 'glTF') throw new Error('The server did not return a valid GLB file for ' + assetUrl);
+            roomBuffer = candidateBuffer;
+            roomBasePath = new URL('.', assetUrl).href;
+            break;
+          } catch (assetError) {
+            lastAssetError = assetError;
+            console.warn('[Optical Transmission] AQ room asset source failed:', assetUrl, assetError);
+          }
+        }
+        if (!roomBuffer) throw lastAssetError || new Error('AQ room asset could not be downloaded.');
+        {
           this.showLoading('Loading ' + roomNames[key], 'Loading your replacement GLB...');
-          await this.parseAndSetup(await response.arrayBuffer(), new URL('.', replacementUrl).href, null, replacementPath.split('/').pop());
+          await this.parseAndSetup(roomBuffer, roomBasePath, null, fileName);
           if (code === 'AQ' && this.currentLevel) {
             // Place the player inside the optimized AQ room, on its grounded floor.
             const roomBounds = new THREE.Box3().setFromObject(this.currentLevel.rootGroup);
@@ -2019,10 +2041,10 @@
           return this.currentLevel;
         }
       } catch (err) {
-        console.error('[Optical Transmission] Could not load the AQ ServerRoom GLB:', err);
+        console.error('[Optical Transmission] Could not load the room GLB:', err);
         this.hideLoading();
         if (code === 'AQ') {
-          alert('AQ Server Room could not be loaded. Check that Assets/Rooms/ServerRoom_Optimized_under20MB.glb is available in the deployed site.');
+          alert('AQ Server Room could not be loaded. The site tried its deployed asset path and GitHub raw fallback. Open DevTools Console (F12) for the exact network or GLB parsing error.');
           return null;
         }
         console.warn('[Optical Transmission] Replacement GLB unavailable; using procedural sample geometry for HA.', err);
