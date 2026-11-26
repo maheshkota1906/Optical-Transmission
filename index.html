@@ -4617,6 +4617,11 @@
       P.r.setPixelRatio(Math.min(window.devicePixelRatio, 2)); P.r.setSize(w, h, false);
       P.cam.aspect = w / h; P.cam.updateProjectionMatrix();
 
+      // Clone the selected component with its complete authored world orientation.
+      // Imported GLB components can inherit rotations (for example parent X = -90°).
+      // Cloning only the child and zeroing its Euler rotation made the preview lie on its side.
+      root.updateWorldMatrix(true, false);
+      const authoredWorldMatrix = root.matrixWorld.clone();
       const up = root.userData.product; delete root.userData.product;   // circular ref (product.modelRoot) would overflow clone()
       const m = root.clone(true), drop = [];
       root.userData.product = up;       // shares geometry/materials with the scene - never dispose them here
@@ -4626,7 +4631,9 @@
       });
       function fixTint(x) { if (x && x.userData && x.userData.tint) { x = x.clone(); x.emissiveIntensity = 0; } return x; }
       drop.forEach((o) => o.parent && o.parent.remove(o));
-      m.position.set(0, 0, 0); m.rotation.set(0, 0, 0); m.scale.set(1, 1, 1); m.updateMatrixWorld(true);
+      authoredWorldMatrix.decompose(m.position, m.quaternion, m.scale);
+      m.position.set(0, 0, 0);
+      m.updateMatrixWorld(true);
       const box = new THREE.Box3().setFromObject(m), c = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3());
       const rad = sz.length() / 2 || 1;
       const holder = new THREE.Group(); holder.add(m); holder.position.copy(c).negate();
