@@ -5341,11 +5341,12 @@
       if (!rg.amb) return;
       const p = LIGHT_PRESETS[s.lightPreset] || LIGHT_PRESETS.daylight;
       const gl = (lv && lv.glbLights) || [], L = (lv && lv.lightingCfg) || {};
-      const isServerRoom = /server room/i.test(String(lv && lv.name || '')) || /ServerRoom_Optimized_under20MB\.glb/i.test(String(lv && lv.sourceFile || ''));
+      // The uploaded Server Room GLB is stored as the level name (not sourceFile).
+      const isServerRoom = /ServerRoom_Optimized_under20MB\.glb/i.test(String(lv && lv.name || ''));
       const k = L.rig != null ? L.rig : (gl.length ? 0.8 : 1);
-      const roomLightingScale = isServerRoom ? 0.62 : 1;
+      const roomLightingScale = isServerRoom ? 0.38 : 1;
       rg.amb.intensity = p.amb * k * roomLightingScale; rg.sun.intensity = p.sun * k * roomLightingScale; rg.fill.intensity = p.fill * k * roomLightingScale;
-      if (isServerRoom && this.renderer) this.renderer.toneMappingExposure = Math.min(s.exposure, 0.82);
+      if (isServerRoom && this.renderer) this.renderer.toneMappingExposure = Math.min(s.exposure, 0.55);
       rg.sun.color.set(p.color); rg.fill.color.set(p.color);
       rg.sun.castShadow = s.shadows;
 
@@ -5354,25 +5355,25 @@
         const dlOn = s.lightPreset === 'exhibition' || s.lightPreset === 'daylight';
         rg.downlights.forEach(dl => {
           dl.visible = dlOn;
-          dl.intensity = dlOn ? (1.5 * k * roomLightingScale) : 0;
+          dl.intensity = dlOn ? (0.65 * k * roomLightingScale) : 0;
         });
       }
 
       this.scene.traverse((o) => {
         if (o.isMesh && o.material) [].concat(o.material).forEach((m) => {
           if (!m || !m.isMeshStandardMaterial) return;
-          m.envMapIntensity = s.reflections * (isServerRoom ? 0.62 : 1);
+          m.envMapIntensity = s.reflections * (isServerRoom ? 0.32 : 1);
           if (m.userData.tint) return;
           if (m.name === 'M_LightEmissive' || (m.userData && m.userData.origName === 'M_LightEmissive')) {
             m.emissive.set(0xfff5d6);
-            m.emissiveIntensity = 2.6 * s.emission;
+            m.emissiveIntensity = 0.65 * s.emission * (isServerRoom ? 0.45 : 1);
           } else {
             if (m.userData.emiBase === undefined) m.userData.emiBase = (m.emissiveMap || m.emissive.r + m.emissive.g + m.emissive.b > 0) ? m.emissiveIntensity : -1;
-            if (m.userData.emiBase >= 0) m.emissiveIntensity = m.userData.emiBase * s.emission;
+            if (m.userData.emiBase >= 0) m.emissiveIntensity = m.userData.emiBase * s.emission * (isServerRoom ? 0.45 : 1);
           }
         });
       });
-      gl.forEach((l) => { l.visible = s.glbLights; l.intensity = l.userData.base * s.glbLightScale * (L.glbScale || 1) * (isServerRoom ? 0.55 : 1); });
+      gl.forEach((l) => { l.visible = s.glbLights; l.intensity = l.userData.base * s.glbLightScale * (L.glbScale || 1) * (isServerRoom ? 0.30 : 1); });
     }
 
     onWindowResize() {
