@@ -1976,7 +1976,7 @@
         optical: 'Optical Transmission Room', odf: 'ODF & Fiber Patching Room', nms: 'Network Monitoring Room',
         server: 'Server Room', ups: 'UPS & Battery Room', monitoring: 'Network Monitoring Room'
       };
-      const levelName = code + ' Site · ' + roomNames[key];
+      const levelName = code === 'AQ' ? 'AQ Site · Optical Transmission Room' : 'HA Site · Server Room';
       const replacementPath = 'Assets/Rooms/' + code + '_' + key + '_Room.glb';
       try {
         const replacementUrl = new URL(replacementPath, location.href);
@@ -2048,18 +2048,18 @@
         box('Server_Room_UPS',1.2,1.8,.85,-3.7,.9,3.1,mat.dark);
         box('UPS_Display',.48,.22,.035,-3.7,1.45,3.55,mat.cyan);
       }
-      if(key==='ups'){
+      if(key==='ups'||key==='server'){
         for(let i=0;i<6;i++)box('Battery_Module_'+i,.68,1.25,.7,-3.8+(i%3)*1.2,.625,2.7+Math.floor(i/3)*1.25,mat.rack);
         box('UPS_Main_Cabinet',1.4,2.1,.9,3.5,1.05,3.2,mat.dark);
         box('UPS_Status_Display',.5,.25,.03,3.5,1.6,3.68,mat.green);
       }
-      if(key==='nms'||key==='monitoring'){
+      if(key==='nms'||key==='monitoring'||key==='optical'||key==='server'){
         box('NMS_Console_Desk',3.8,.14,1.0,0,.85,3.6,mat.metal);
         for(let i=0;i<3;i++)box('NMS_Display_'+i,1.05,.72,.08,-1.2+i*1.2,1.48,3.95,mat.cyan);
         box('Monitoring_Wall_Display',4.4,1.55,.12,0,2.65,-6.72,mat.dark);
         for(let i=0;i<4;i++)box('Wall_Dashboard_'+i,.92,.62,.035,-1.55+i*1.03,2.68,-6.63,mat.cyan);
       }
-      if(key==='odf'){
+      if(key==='odf'||key==='optical'){
         for(let i=0;i<8;i++)box('Fiber_Management_Duct_'+i,.12,.12,10,-5.3+i*1.5,3.3,0,mat.cyan);
       }
       if(key==='server'||key==='ups'){
@@ -5432,87 +5432,35 @@
     </div>
   </section>
 
-  <section id="room-selection-screen" aria-hidden="true">
-    <div class="ors-wrap">
-      <div class="ors-top"><button id="ors-back" type="button">← Back to site selection</button><span id="ors-site-label">AQ SITE</span></div>
-      <header class="ors-heading"><div class="ors-kicker">OPTICAL TRANSMISSION · ROOM DIRECTORY</div><h2>Select a <span>Room</span></h2><p>Choose a sample room to enter. These demo environments can be replaced with your own GLB files.</p></header>
-      <div id="ors-room-grid" class="ors-grid"></div>
-      <div class="ors-foot">SAMPLE ENVIRONMENTS · REPLACEABLE WITH YOUR GLB MODELS</div>
-    </div>
-  </section>
-  <style>
-    #room-selection-screen{position:fixed;inset:0;z-index:80;display:none;overflow:auto;background:radial-gradient(circle at 80% 10%,rgba(0,183,255,.18),transparent 35%),linear-gradient(145deg,#06111d,#0b2231 58%,#06111d);color:#effaff;font-family:Inter,sans-serif}
-    #room-selection-screen.is-open{display:block}
-    .ors-wrap{min-height:100%;width:100%;padding:clamp(24px,5vw,72px);display:flex;flex-direction:column;justify-content:center;gap:28px}
-    .ors-top{display:flex;justify-content:space-between;align-items:center;gap:12px;color:#8edfff;font-size:11px;letter-spacing:.16em}
-    #ors-back{border:1px solid rgba(103,211,255,.4);border-radius:999px;padding:11px 17px;background:rgba(4,26,40,.8);color:#bdeeff;cursor:pointer}
-    .ors-heading{text-align:center;max-width:760px;margin:0 auto}
-    .ors-kicker{font-size:10px;letter-spacing:.24em;color:#5acdf8;font-weight:700;margin-bottom:15px}
-    .ors-heading h2{font-size:clamp(42px,7vw,78px);line-height:1;margin:0;font-weight:800;letter-spacing:-.05em}
-    .ors-heading h2 span{color:#42caff}
-    .ors-heading p{max-width:580px;margin:16px auto 0;color:#a9c5d4;line-height:1.7;font-size:14px}
-    .ors-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;width:min(1100px,100%);margin:0 auto}
-    .ors-card{min-height:230px;padding:22px;border:1px solid rgba(103,205,239,.35);border-radius:18px;background:linear-gradient(145deg,rgba(14,52,72,.92),rgba(5,22,36,.95));color:#effaff;text-align:left;display:flex;flex-direction:column;justify-content:space-between;gap:20px;cursor:pointer;transition:.2s ease;box-shadow:0 18px 50px rgba(0,0,0,.2)}
-    .ors-card:hover{transform:translateY(-5px);border-color:#4bd3ff;box-shadow:0 18px 55px rgba(0,155,220,.2)}
-    .ors-card-icon{width:48px;height:48px;border:1px solid rgba(85,211,255,.4);border-radius:13px;display:grid;place-items:center;background:rgba(22,164,210,.13);color:#65d9ff;font-size:22px}
-    .ors-card h3{font-size:20px;font-weight:750;margin:0 0 8px}
-    .ors-card p{font-size:12px;color:#9ebdce;line-height:1.6;margin:0}
-    .ors-card span.ors-enter{font-size:11px;color:#66d8ff;letter-spacing:.12em;text-transform:uppercase;font-weight:700}
-    .ors-foot{text-align:center;color:#6f98ac;font-size:10px;letter-spacing:.16em}
-    @media(max-width:850px){.ors-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-    @media(max-width:560px){.ors-wrap{padding:20px 16px;gap:22px}.ors-grid{grid-template-columns:1fr}.ors-card{min-height:150px;padding:18px}.ors-heading p{font-size:12px}}
-  </style>
-
   <script>
     (() => {
-      const enterButton=document.getElementById('sp-enter');
-      const siteScreen=document.getElementById('site-selection-screen');
-      const roomScreen=document.getElementById('room-selection-screen');
-      const grid=document.getElementById('ors-room-grid');
-      const siteLabel=document.getElementById('ors-site-label');
-      if(!enterButton||!siteScreen||!roomScreen||!grid)return;
-      let chosenSite='AQ';
-      const rooms={
-        AQ:[
-          {key:'optical',icon:'⌁',name:'Optical Transmission Room',desc:'DWDM racks, optical test equipment and fiber transmission systems.'},
-          {key:'odf',icon:'▤',name:'ODF & Fiber Patching Room',desc:'Optical distribution frames, patch panels and fiber management.'},
-          {key:'nms',icon:'▣',name:'Network Monitoring Room',desc:'Network monitoring consoles, dashboard displays and equipment racks.'}
-        ],
-        HA:[
-          {key:'server',icon:'▥',name:'Server Room',desc:'Server cabinets, network racks and room infrastructure.'},
-          {key:'ups',icon:'▤',name:'UPS & Battery Room',desc:'UPS cabinets, battery modules and power distribution.'},
-          {key:'monitoring',icon:'▣',name:'Network Monitoring Room',desc:'Monitoring workstations, wall displays and network racks.'}
-        ]
-      };
-      enterButton.addEventListener('click',event=>{
-        event.preventDefault();event.stopImmediatePropagation();
-        siteScreen.classList.add('is-open');siteScreen.setAttribute('aria-hidden','false');
-      },true);
-      siteScreen.querySelectorAll('[data-optical-site]').forEach(button=>{
-        button.addEventListener('click',()=>{
-          chosenSite=button.dataset.opticalSite==='HA'?'HA':'AQ';
-          window.selectedOpticalSite=chosenSite;
-          document.documentElement.dataset.opticalSite=chosenSite.toLowerCase();
-          siteLabel.textContent=chosenSite+' SITE · SELECT A ROOM';
-          grid.innerHTML=rooms[chosenSite].map(room=>`
-            <button class="ors-card" type="button" data-room-key="${room.key}">
-              <span class="ors-card-icon" aria-hidden="true">${room.icon}</span>
-              <span><h3>${room.name}</h3><p>${room.desc}</p></span>
-              <span class="ors-enter">Enter room →</span>
-            </button>`).join('');
-          siteScreen.classList.remove('is-open');siteScreen.setAttribute('aria-hidden','true');
-          roomScreen.classList.add('is-open');roomScreen.setAttribute('aria-hidden','false');
+      const enterButton = document.getElementById('sp-enter');
+      const siteScreen = document.getElementById('site-selection-screen');
+      if (!enterButton || !siteScreen) return;
+
+      enterButton.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        siteScreen.classList.add('is-open');
+        siteScreen.setAttribute('aria-hidden', 'false');
+      }, true);
+
+      siteScreen.querySelectorAll('[data-optical-site]').forEach(button => {
+        button.addEventListener('click', async () => {
+          const site = button.dataset.opticalSite === 'HA' ? 'HA' : 'AQ';
+          window.selectedOpticalSite = site;
+          document.documentElement.dataset.opticalSite = site.toLowerCase();
+
+          const app = window.app;
+          if (!app || typeof app.openOpticalSampleRoom !== 'function') {
+            console.error('Walkthrough application is not ready.');
+            return;
+          }
+
+          siteScreen.classList.remove('is-open');
+          siteScreen.setAttribute('aria-hidden', 'true');
+          await app.openOpticalSampleRoom(site, site === 'AQ' ? 'optical' : 'server');
         });
-      });
-      document.getElementById('ors-back').addEventListener('click',()=>{
-        roomScreen.classList.remove('is-open');roomScreen.setAttribute('aria-hidden','true');
-        siteScreen.classList.add('is-open');siteScreen.setAttribute('aria-hidden','false');
-      });
-      grid.addEventListener('click',event=>{
-        const button=event.target.closest('[data-room-key]');if(!button)return;
-        const app=window.app;
-        if(!app||typeof app.openOpticalSampleRoom!=='function'){console.error('Walkthrough application is not ready.');return;}
-        app.openOpticalSampleRoom(chosenSite,button.dataset.roomKey);
       });
     })();
   </script>
