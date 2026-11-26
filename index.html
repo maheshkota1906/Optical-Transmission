@@ -5410,7 +5410,12 @@
   </style>
   <style>
     .ots-link-hotspots{position:absolute;inset:0;width:100%;height:100%;z-index:3;overflow:visible;pointer-events:auto}
-    .ots-flow-packets{pointer-events:none}
+    .ots-flow-packets{pointer-events:none;opacity:0;visibility:hidden}
+    .ots-link-hotspots.route-primary-active .ots-flow-primary,
+    .ots-link-hotspots.route-backup-active .ots-flow-backup{opacity:1;visibility:visible}
+    .ots-route-hit.is-selected-primary{stroke:rgba(0,205,255,.72);stroke-width:8;filter:drop-shadow(0 0 7px #00cfff)}
+    .ots-route-hit.is-selected-backup{stroke:rgba(255,183,35,.78);stroke-width:8;filter:drop-shadow(0 0 7px #ffb323)}
+    .ots-route-hit{transition:stroke .2s ease,filter .2s ease}
     .ots-flow-primary circle{fill:#b9f8ff;stroke:#00dfff;stroke-width:2.5;filter:drop-shadow(0 0 5px #00eaff) drop-shadow(0 0 12px #00bfff)}
     .ots-flow-backup circle{fill:#fff0b0;stroke:#ffb21c;stroke-width:2.5;filter:drop-shadow(0 0 5px #ffb21c) drop-shadow(0 0 12px #ff8c00)}
     @media(prefers-reduced-motion:reduce){.ots-flow-packets{opacity:.72}}
@@ -5501,6 +5506,8 @@
       const routeTitle = document.getElementById('ots-link-title');
       const routeDescription = document.getElementById('ots-link-description');
       const routeKicker = document.getElementById('ots-link-kicker');
+      const routeSvg = siteScreen.querySelector('.ots-link-hotspots');
+      const routePaths = [...siteScreen.querySelectorAll('.ots-route-hit')];
       const routeCopy = {
         primary: {
           kicker: 'BLUE ROUTE · PRIMARY PATH',
@@ -5534,6 +5541,14 @@
         routeTitle.textContent = info.title;
         routeDescription.textContent = info.description;
         routeInfo.hidden = false;
+        if (routeSvg) {
+          routeSvg.classList.toggle('route-primary-active', routeKey === 'primary');
+          routeSvg.classList.toggle('route-backup-active', routeKey === 'backup');
+        }
+        routePaths.forEach(path => {
+          path.classList.toggle('is-selected-primary', routeKey === 'primary' && path.dataset.route === 'primary');
+          path.classList.toggle('is-selected-backup', routeKey === 'backup' && path.dataset.route === 'backup');
+        });
         speakRoute(info);
       };
       siteScreen.querySelectorAll('.ots-route-hit').forEach(path => {
