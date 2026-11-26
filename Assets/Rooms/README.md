@@ -1,12 +1,17 @@
 # Optical Transmission sample room assets
 
-The AQ and HA sample rooms are currently generated procedurally by the WebGL application.
+AQ and HA rooms are generated as procedural 3D sample environments. You can replace any room with your own GLB model by uploading it with the exact filename below.
 
-To replace a sample room with your own GLB, upload your model using one of these exact paths:
+## AQ site
+- `AQ_optical_Room.glb` — Optical Transmission Room
+- `AQ_odf_Room.glb` — ODF & Fiber Patching Room
+- `AQ_nms_Room.glb` — Network Monitoring Room
 
-- `AQ_Room.glb` — AQ Optical Transmission room
-- `HA_Room.glb` — HA / Server room
+## HA site
+- `HA_server_Room.glb` — Server Room
+- `HA_ups_Room.glb` — UPS & Battery Room
+- `HA_monitoring_Room.glb` — Network Monitoring Room
 
-Place both files in this `Assets/Rooms/` folder. The application checks for the matching GLB when a site is selected. If it exists, it loads that model; if it does not exist, the built-in sample room is shown.
+The application checks for the matching file under `Assets/Rooms/` when you enter a room. If the GLB is present it loads that model; otherwise it shows the built-in sample room.
 
-**Model guidance:** export as GLB with textures embedded, place the room floor near Y=0, and keep the walkable interior centred around the origin where possible. Use sensible real-world scale (metres).
+**Model guidance:** export as GLB with textures embedded, use metres as the scale, and keep the room floor near Y=0. Position the intended player spawn area near the centre of the room where possible.
