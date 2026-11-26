@@ -2382,7 +2382,9 @@
       const insetX = Math.min(Math.max(APP_CONFIG.playerRadius + 0.2, size.x * 0.08), size.x * 0.22);
       const insetZ = Math.min(Math.max(APP_CONFIG.playerRadius + 0.2, size.z * 0.08), size.z * 0.22);
       level.floorY = floorPoint.y;
-      level.eyeHeight = APP_CONFIG.eyeHeight;
+      // Slightly lower eye/camera height for this Server Room walkthrough.
+      // Keep the global player height unchanged for AQ and other scenes.
+      level.eyeHeight = 1.55;
       level.spawnPosition.set(floorPoint.x, floorPoint.y + level.eyeHeight, floorPoint.z);
       level.spawnYaw = 0;
       level.spawnPitch = 0;
