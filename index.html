@@ -5715,18 +5715,15 @@
           siteScreen.classList.remove('is-open');
           siteScreen.setAttribute('aria-hidden', 'true');
 
-          if (site === 'HA') {
-            // HA is the dedicated Server Room experience: client simulator + optimized GLB.
-            location.href = 'hcia-transmission-vr-lab.html';
-            return;
-          }
-
+          // Both site choices stay in this walkthrough and load the existing optimized GLB.
+          // The HCIA client is presented by client-ui-bridge.js as a floating panel,
+          // not as a second standalone room or a page navigation.
           const app = window.app;
           if (!app || typeof app.openOpticalSampleRoom !== 'function') {
             console.error('Walkthrough application is not ready.');
             return;
           }
-          await app.openOpticalSampleRoom('AQ', 'optical');
+          await app.openOpticalSampleRoom(site, site === 'HA' ? 'server' : 'optical');
         });
       });
     })();
