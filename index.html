@@ -1968,126 +1968,94 @@
     }
 
 
-    /* Procedural Optical Transmission sample rooms.
-       Replace these demo meshes with your own GLB models when ready. */
-    async openOpticalSampleRoom(site) {
+    /* Optical Transmission sample room builder. Replace the generated geometry with site GLBs later. */
+    openOpticalSampleRoom(site, roomKey) {
       const code = site === 'HA' ? 'HA' : 'AQ';
-      const isHA = code === 'HA';
-      // If a replacement GLB has been uploaded, prefer it; otherwise build the procedural demo room.
-      const replacementPath = 'Assets/Rooms/' + code + '_Room.glb';
-      try {
-        const replacementUrl = new URL(replacementPath, location.href);
-        const response = await fetch(replacementUrl.href, { cache: 'no-cache' });
-        if (response.ok) {
-          this.showLoading('Loading ' + code + ' Site', 'Loading your GLB room...');
-          await this.parseAndSetup(await response.arrayBuffer(), new URL('.', replacementUrl).href, null, code + '_Room.glb');
-          this.hideLoading();
-          this.setAppState(AppState.EXPLORE);
-          const startPage = document.getElementById('start-page');
-          if (startPage) { startPage.classList.add('opacity-0'); startPage.style.pointerEvents='none'; setTimeout(()=>{startPage.style.display='none';},400); }
-          const selectionScreen = document.getElementById('site-selection-screen');
-          if (selectionScreen) { selectionScreen.classList.remove('is-open'); selectionScreen.setAttribute('aria-hidden','true'); }
-          if (!this.isTouchCapableDevice && this.pointerControls) this.pointerControls.lock();
-          return this.currentLevel;
-        }
-      } catch (err) {
-        console.warn('[Optical Transmission] Replacement GLB not available; using the built-in sample room.', err);
-      }
-      const level = new Level('sample-' + code.toLowerCase(), code + ' Site · Sample ' + (isHA ? 'HA / Server Room' : 'AQ / Optical Transmission Room'));
+      const key = roomKey || (code === 'AQ' ? 'optical' : 'server');
+      const roomNames = {
+        optical: 'Optical Transmission Room', odf: 'ODF & Fiber Patching Room', nms: 'Network Monitoring Room',
+        server: 'Server Room', ups: 'UPS & Battery Room', monitoring: 'Network Monitoring Room'
+      };
+      const level = new Level('sample-' + code.toLowerCase() + '-' + key, code + ' Site · ' + roomNames[key]);
       const root = level.rootGroup;
-      const mats = {
-        floor: new THREE.MeshStandardMaterial({ color: 0x26333c, roughness: 0.82 }),
-        wall: new THREE.MeshStandardMaterial({ color: 0x9caab2, roughness: 0.86 }),
-        wallDark: new THREE.MeshStandardMaterial({ color: 0x182832, roughness: 0.78 }),
-        trim: new THREE.MeshStandardMaterial({ color: 0x08b8e8, metalness: 0.55, roughness: 0.28, emissive: 0x003b52, emissiveIntensity: 0.5 }),
-        rack: new THREE.MeshStandardMaterial({ color: 0x202a31, metalness: 0.72, roughness: 0.36 }),
-        metal: new THREE.MeshStandardMaterial({ color: 0x77858d, metalness: 0.82, roughness: 0.28 }),
-        screen: new THREE.MeshStandardMaterial({ color: 0x071a24, emissive: 0x00aeea, emissiveIntensity: 1.2, roughness: 0.25 }),
-        green: new THREE.MeshStandardMaterial({ color: 0x193c32, emissive: 0x0a6b43, emissiveIntensity: 0.55 }),
-        amber: new THREE.MeshStandardMaterial({ color: 0x8b5017, emissive: 0xff8b18, emissiveIntensity: 0.7 })
+      const mat = {
+        floor:new THREE.MeshStandardMaterial({color:0x26343d,roughness:.84}),
+        wall:new THREE.MeshStandardMaterial({color:0xaebbc2,roughness:.9}),
+        dark:new THREE.MeshStandardMaterial({color:0x172631,roughness:.75}),
+        rack:new THREE.MeshStandardMaterial({color:0x202b34,metalness:.55,roughness:.4}),
+        metal:new THREE.MeshStandardMaterial({color:0x778b96,metalness:.78,roughness:.3}),
+        cyan:new THREE.MeshStandardMaterial({color:0x0c526c,emissive:0x00a9d8,emissiveIntensity:.7,metalness:.35}),
+        green:new THREE.MeshStandardMaterial({color:0x174c38,emissive:0x13a66a,emissiveIntensity:.65}),
+        amber:new THREE.MeshStandardMaterial({color:0x704317,emissive:0xffa52e,emissiveIntensity:.65})
       };
-      const addBox = (name, w, h, d, x, y, z, mat, parent = root) => {
-        const mesh = new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
-        mesh.name = name; mesh.position.set(x,y,z); mesh.castShadow = true; mesh.receiveShadow = true; parent.add(mesh); return mesh;
+      const box=(name,w,h,d,x,y,z,material)=>{
+        const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.name=name;m.position.set(x,y,z);
+        m.castShadow=true;m.receiveShadow=true;root.add(m);return m;
       };
-      const floor = addBox('Sample_Room_Floor',12,.18,14,0,-.09,0,mats.floor);
-      floor.userData.isWalkablePlatform = true;
-      addBox('Back_Wall',12,4.2,.22,0,2.1,-7,mats.wall);
-      addBox('Left_Wall',.22,4.2,14,-6,2.1,0,mats.wall);
-      addBox('Right_Wall',.22,4.2,14,6,2.1,0,mats.wall);
-      addBox('Front_Wall_Left',4.3,4.2,.22,-3.85,2.1,7,mats.wall);
-      addBox('Front_Wall_Right',4.3,4.2,.22,3.85,2.1,7,mats.wall);
-      addBox('Ceiling',12,.16,14,0,4.25,0,mats.wallDark);
-      addBox('Back_Accent',11.7,.12,.04,0,3.82,-6.86,mats.trim);
-      addBox('Door_Header',3.4,.25,.3,0,3.9,7,mats.wallDark);
-      addBox('Door_Left_Jamb',.18,3.8,.3,-1.65,1.9,7,mats.metal);
-      addBox('Door_Right_Jamb',.18,3.8,.3,1.65,1.9,7,mats.metal);
-
-      // Recessed linear ceiling lights.
-      for(let i=0;i<4;i++){
-        const light = new THREE.PointLight(0xb9eaff, isHA ? 1.05 : .85, 10, 2);
-        light.position.set(i%2===0?-3.2:3.2,3.95,i<2?-3.8:2.2); root.add(light);
-        addBox('Ceiling_LED_'+i,2.2,.035,.12,i%2===0?-3.2:3.2,4.12,i<2?-3.8:2.2,mats.trim);
+      const floor=box('SM_Platform',12,.18,14,0,-.09,0,mat.floor);floor.userData.isWalkablePlatform=true;
+      box('Back_Wall',12,4.2,.2,0,2.1,-7,mat.wall);
+      box('Left_Wall',.2,4.2,14,-6,2.1,0,mat.wall);
+      box('Right_Wall',.2,4.2,14,6,2.1,0,mat.wall);
+      box('Front_Wall_Left',4.25,4.2,.2,-3.875,2.1,7,mat.wall);
+      box('Front_Wall_Right',4.25,4.2,.2,3.875,2.1,7,mat.wall);
+      box('Ceiling',12,.16,14,0,4.25,0,mat.dark);
+      box('Rear_Cable_Tray',10,.12,.16,0,3.42,-6.7,mat.metal);
+      for(let n=0;n<4;n++){
+        const light=new THREE.PointLight(0xb9eaff,1.1,10,2);light.position.set(n%2?-3:3,3.85,n<2?-3.8:2.5);root.add(light);
+        box('Ceiling_LED_'+n,2,.035,.12,n%2?-3:3,4.12,n<2?-3.8:2.5,mat.cyan);
       }
-
-      // Wall-mounted cable tray and conduit runs.
-      addBox('Cable_Tray_Back',10,.12,.18,0,3.35,-6.55,mats.metal);
-      addBox('Cable_Tray_Left',.18,.12,11,-5.55,3.35,0,mats.metal);
-      addBox('Cable_Tray_Right',.18,.12,11,5.55,3.35,0,mats.metal);
-
-      const makeRack = (name,x,z,variant) => {
-        const rack = new THREE.Group(); rack.name=name; rack.position.set(x,0,z); root.add(rack);
-        const width=variant?1.35:1.05, height=2.55, depth=.82;
-        const body = new THREE.Mesh(new THREE.BoxGeometry(width,height,depth),mats.rack);
-        body.position.y=height/2; body.castShadow=true; body.receiveShadow=true; rack.add(body);
-        addBox(name+'_Top',width+.08,.08,depth+.08,x,height+.04,z,mats.metal);
-        addBox(name+'_Base',width+.08,.1,depth+.08,x,.05,z,mats.metal);
-        for(let n=0;n<8;n++){
-          const yy=.28+n*.27;
-          addBox(name+'_Equipment_'+n,width-.16,.19,.035,x,yy,z+depth/2+.025,n%3===0?mats.screen:mats.wallDark);
-          addBox(name+'_Status_LED_'+n,.035,.035,.025,x-width*.34,yy,z+depth/2+.05,n%2?mats.green:mats.amber);
-          addBox(name+'_Port_Row_'+n,.24,.045,.025,x+.18,yy,z+depth/2+.05,mats.metal);
+      const rack=(name,x,z,wide=false)=>{
+        const w=wide?1.3:1.05,d=.82,h=2.55;
+        box(name+'_Cabinet',w,h,d,x,h/2,z,mat.rack);
+        box(name+'_Top',w+.08,.07,d+.08,x,h+.035,z,mat.metal);
+        box(name+'_Base',w+.08,.09,d+.08,x,.045,z,mat.metal);
+        for(let j=0;j<8;j++){
+          const y=.28+j*.27;
+          box(name+'_Shelf_'+j,w-.16,.19,.035,x,y,z+d/2+.025,j%3===0?mat.cyan:mat.dark);
+          box(name+'_LED_'+j,.035,.035,.025,x-w*.34,y,z+d/2+.05,j%2?mat.green:mat.amber);
         }
-        addBox(name+'_Side_Label',.42,.18,.025,x,2.25,z+depth/2+.06,mats.trim);
       };
-
-      if(isHA){
-        // HA sample: compact server room with server cabinets, UPS and battery bank.
-        [-4.65,-2.95,2.95,4.65].forEach((x,i)=>makeRack('HA_Server_Rack_'+(i+1),x,-2.8,i===1||i===2));
-        addBox('HA_UPS_Cabinet',1.25,1.85,.85,-3.8,.925,3.1,mats.wallDark);
-        addBox('HA_UPS_Display',.48,.24,.035,-3.8,1.45,3.55,mats.screen);
-        for(let i=0;i<4;i++) addBox('HA_Battery_Module_'+i,.62,1.05,.62,2.6+(i%2)*.75,.525,2.8+Math.floor(i/2)*.8,mats.rack);
-        addBox('HA_Monitor_Desk',2.2,.12,.85,0,.85,-5.65,mats.metal);
-        addBox('HA_Monitor_Screen',1.25,.82,.08,0,1.35,-5.95,mats.screen);
-      } else {
-        // AQ sample: optical transmission room with ODF, DWDM shelves and test bench.
-        [-4.65,-2.95,2.95,4.65].forEach((x,i)=>makeRack('AQ_Optical_Rack_'+(i+1),x,-2.8,i===1||i===2));
-        addBox('AQ_ODF_Frame',2.15,2.5,.28,0,1.25,-6.45,mats.rack);
-        for(let i=0;i<12;i++) addBox('AQ_ODF_Patch_Panel_'+i,1.85,.12,.08,0,.35+i*.18,-6.25,i%3===0?mats.trim:mats.metal);
-        addBox('AQ_Test_Bench',2.5,.12,.9,0,.9,3.7,mats.metal);
-        addBox('AQ_Test_Equipment',.65,.48,.52,-.55,1.2,3.65,mats.wallDark);
-        addBox('AQ_Test_Display',.42,.25,.035,-.55,1.25,3.93,mats.screen);
-        addBox('AQ_Fiber_Spool',.42,.42,.12,.65,1.18,3.65,mats.trim);
+      const rackPositions=key==='nms'||key==='monitoring'?[-4.5,4.5]:[-4.55,-2.95,2.95,4.55];
+      rackPositions.forEach((x,i)=>rack(code+'_'+key+'_Rack_'+(i+1),x,-2.6,i===1||i===2));
+      if(key==='optical'||key==='odf'){
+        box('ODF_Frame',2.25,2.5,.28,0,1.25,-6.5,mat.rack);
+        for(let i=0;i<12;i++)box('ODF_Patch_Panel_'+i,1.95,.12,.07,0,.35+i*.18,-6.32,i%3===0?mat.cyan:mat.metal);
+        box('Fiber_Test_Bench',2.4,.12,.9,0,.9,3.65,mat.metal);
+        box('Optical_Test_Unit',.65,.48,.5,-.55,1.2,3.65,mat.dark);
+        box('Test_Unit_Display',.4,.24,.03,-.55,1.25,3.92,mat.cyan);
+        box('Fiber_Spool',.42,.42,.12,.65,1.18,3.65,mat.cyan);
       }
-
-      // Doorway floor threshold, safety markings and room ID panel.
-      for(let i=0;i<12;i++) addBox('Floor_Safety_Mark_'+i,.42,.012,.08,-2.3+i*.42,.012,6.55,mats.amber);
-      addBox('Room_ID_Panel',1.8,.42,.08,0,3.35,6.82,mats.wallDark);
-      addBox('Room_ID_Light',1.25,.045,.025,0,3.45,6.77,mats.trim);
-
-      level.spawnPosition.set(0,APP_CONFIG.eyeHeight,5.35);
-      level.spawnYaw = 0;
-      level.floorY = 0;
+      if(key==='server'){
+        box('Server_Room_UPS',1.2,1.8,.85,-3.7,.9,3.1,mat.dark);
+        box('UPS_Display',.48,.22,.035,-3.7,1.45,3.55,mat.cyan);
+      }
+      if(key==='ups'){
+        for(let i=0;i<6;i++)box('Battery_Module_'+i,.68,1.25,.7,-3.8+(i%3)*1.2,.625,2.7+Math.floor(i/3)*1.25,mat.rack);
+        box('UPS_Main_Cabinet',1.4,2.1,.9,3.5,1.05,3.2,mat.dark);
+        box('UPS_Status_Display',.5,.25,.03,3.5,1.6,3.68,mat.green);
+      }
+      if(key==='nms'||key==='monitoring'){
+        box('NMS_Console_Desk',3.8,.14,1.0,0,.85,3.6,mat.metal);
+        for(let i=0;i<3;i++)box('NMS_Display_'+i,1.05,.72,.08,-1.2+i*1.2,1.48,3.95,mat.cyan);
+        box('Monitoring_Wall_Display',4.4,1.55,.12,0,2.65,-6.72,mat.dark);
+        for(let i=0;i<4;i++)box('Wall_Dashboard_'+i,.92,.62,.035,-1.55+i*1.03,2.68,-6.63,mat.cyan);
+      }
+      if(key==='odf'){
+        for(let i=0;i<8;i++)box('Fiber_Management_Duct_'+i,.12,.12,10,-5.3+i*1.5,3.3,0,mat.cyan);
+      }
+      if(key==='server'||key==='ups'){
+        box('Battery_And_Power_Distribution',1.15,1.8,.85,3.8,.9,3.1,mat.dark);
+      }
+      for(let i=0;i<12;i++)box('Floor_Safety_Mark_'+i,.4,.012,.08,-2.3+i*.42,.012,6.55,mat.amber);
+      box('Room_ID_Panel',2,.42,.08,0,3.4,6.82,mat.dark);
+      box('Room_ID_Light',1.35,.045,.025,0,3.48,6.77,mat.cyan);
+      level.spawnPosition.set(0,APP_CONFIG.eyeHeight,5.3);level.spawnYaw=0;level.floorY=0;
       level.roomBounds.set(new THREE.Vector3(-5.8,0,-6.8),new THREE.Vector3(5.8,4.1,6.8));
-      this.rebuildLevelColliders(level);
-      this.loadLevel(level);
-      this.hideLoading();
-      this.setAppState(AppState.EXPLORE);
-      const start = document.getElementById('start-page');
-      if(start){start.classList.add('opacity-0');start.style.pointerEvents='none';setTimeout(()=>{start.style.display='none';},400);}
-      const selection = document.getElementById('site-selection-screen');
-      if(selection){selection.classList.remove('is-open');selection.setAttribute('aria-hidden','true');}
-      if(!this.isTouchCapableDevice && this.pointerControls) this.pointerControls.lock();
+      this.rebuildLevelColliders(level);this.loadLevel(level);this.hideLoading();this.setAppState(AppState.EXPLORE);
+      const start=document.getElementById('start-page');if(start){start.classList.add('opacity-0');start.style.pointerEvents='none';setTimeout(()=>{start.style.display='none';},400);}
+      const siteScreen=document.getElementById('site-selection-screen');if(siteScreen){siteScreen.classList.remove('is-open');siteScreen.setAttribute('aria-hidden','true');}
+      const roomScreen=document.getElementById('room-selection-screen');if(roomScreen){roomScreen.classList.remove('is-open');roomScreen.setAttribute('aria-hidden','true');}
+      if(!this.isTouchCapableDevice&&this.pointerControls)this.pointerControls.lock();
       return level;
     }
 
@@ -5418,3 +5386,116 @@
       .ots-heading h2{font-size:clamp(34px,5vh,54px)}
       .ots-heading p{margin-top:8px}
       .ots-site-button{min-height:82px}
+    }
+
+  </style>
+  <section id="site-selection-screen" aria-label="Optical Transmission site selection" aria-hidden="true">
+    <div class="ots-wrap">
+      <div class="ots-topline"><span>OPTICAL TRANSMISSION · NETWORK OVERVIEW</span><span class="ots-live">SITE SELECTION</span></div>
+      <div class="ots-heading">
+        <h2>Select Your <span>Site</span></h2>
+        <p>Choose the Optical Transmission location you want to explore. Select AQ or HA to enter its 3D environment.</p>
+      </div>
+      <div class="ots-map-frame">
+        <img class="ots-map-image" src="https://raw.githubusercontent.com/maheshkota1906/Optical-Transmission/main/Neon%20Mountain%20Network%20Site%20Selection.png" alt="Neon Mountain Network Site Selection map showing the AQ and HA network sites" loading="eager">
+        <div class="ots-map-caption"><span>Network site selection map</span><span>Choose one location below</span></div>
+      </div>
+      <div class="ots-choice-label">Choose a destination</div>
+      <div class="ots-site-grid">
+        <button class="ots-site-button" type="button" data-optical-site="AQ" aria-label="Enter AQ site">
+          <span class="ots-site-code">AQ</span><span class="ots-site-copy"><strong>AQ Site</strong><small>Open the AQ Optical Transmission environment</small></span><span class="ots-site-arrow" aria-hidden="true">→</span>
+        </button>
+        <button class="ots-site-button" type="button" data-optical-site="HA" aria-label="Enter HA site">
+          <span class="ots-site-code">HA</span><span class="ots-site-copy"><strong>HA Site</strong><small>Open the HA Optical Transmission environment</small></span><span class="ots-site-arrow" aria-hidden="true">→</span>
+        </button>
+      </div>
+      <div class="ots-footer">OPTICAL TRANSMISSION · INTERACTIVE 3D EXPERIENCE</div>
+    </div>
+  </section>
+
+  <section id="room-selection-screen" aria-hidden="true">
+    <div class="ors-wrap">
+      <div class="ors-top"><button id="ors-back" type="button">← Back to site selection</button><span id="ors-site-label">AQ SITE</span></div>
+      <header class="ors-heading"><div class="ors-kicker">OPTICAL TRANSMISSION · ROOM DIRECTORY</div><h2>Select a <span>Room</span></h2><p>Choose a sample room to enter. These demo environments can be replaced with your own GLB files.</p></header>
+      <div id="ors-room-grid" class="ors-grid"></div>
+      <div class="ors-foot">SAMPLE ENVIRONMENTS · REPLACEABLE WITH YOUR GLB MODELS</div>
+    </div>
+  </section>
+  <style>
+    #room-selection-screen{position:fixed;inset:0;z-index:80;display:none;overflow:auto;background:radial-gradient(circle at 80% 10%,rgba(0,183,255,.18),transparent 35%),linear-gradient(145deg,#06111d,#0b2231 58%,#06111d);color:#effaff;font-family:Inter,sans-serif}
+    #room-selection-screen.is-open{display:block}
+    .ors-wrap{min-height:100%;width:100%;padding:clamp(24px,5vw,72px);display:flex;flex-direction:column;justify-content:center;gap:28px}
+    .ors-top{display:flex;justify-content:space-between;align-items:center;gap:12px;color:#8edfff;font-size:11px;letter-spacing:.16em}
+    #ors-back{border:1px solid rgba(103,211,255,.4);border-radius:999px;padding:11px 17px;background:rgba(4,26,40,.8);color:#bdeeff;cursor:pointer}
+    .ors-heading{text-align:center;max-width:760px;margin:0 auto}
+    .ors-kicker{font-size:10px;letter-spacing:.24em;color:#5acdf8;font-weight:700;margin-bottom:15px}
+    .ors-heading h2{font-size:clamp(42px,7vw,78px);line-height:1;margin:0;font-weight:800;letter-spacing:-.05em}
+    .ors-heading h2 span{color:#42caff}
+    .ors-heading p{max-width:580px;margin:16px auto 0;color:#a9c5d4;line-height:1.7;font-size:14px}
+    .ors-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;width:min(1100px,100%);margin:0 auto}
+    .ors-card{min-height:230px;padding:22px;border:1px solid rgba(103,205,239,.35);border-radius:18px;background:linear-gradient(145deg,rgba(14,52,72,.92),rgba(5,22,36,.95));color:#effaff;text-align:left;display:flex;flex-direction:column;justify-content:space-between;gap:20px;cursor:pointer;transition:.2s ease;box-shadow:0 18px 50px rgba(0,0,0,.2)}
+    .ors-card:hover{transform:translateY(-5px);border-color:#4bd3ff;box-shadow:0 18px 55px rgba(0,155,220,.2)}
+    .ors-card-icon{width:48px;height:48px;border:1px solid rgba(85,211,255,.4);border-radius:13px;display:grid;place-items:center;background:rgba(22,164,210,.13);color:#65d9ff;font-size:22px}
+    .ors-card h3{font-size:20px;font-weight:750;margin:0 0 8px}
+    .ors-card p{font-size:12px;color:#9ebdce;line-height:1.6;margin:0}
+    .ors-card span.ors-enter{font-size:11px;color:#66d8ff;letter-spacing:.12em;text-transform:uppercase;font-weight:700}
+    .ors-foot{text-align:center;color:#6f98ac;font-size:10px;letter-spacing:.16em}
+    @media(max-width:850px){.ors-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:560px){.ors-wrap{padding:20px 16px;gap:22px}.ors-grid{grid-template-columns:1fr}.ors-card{min-height:150px;padding:18px}.ors-heading p{font-size:12px}}
+  </style>
+
+  <script>
+    (() => {
+      const enterButton=document.getElementById('sp-enter');
+      const siteScreen=document.getElementById('site-selection-screen');
+      const roomScreen=document.getElementById('room-selection-screen');
+      const grid=document.getElementById('ors-room-grid');
+      const siteLabel=document.getElementById('ors-site-label');
+      if(!enterButton||!siteScreen||!roomScreen||!grid)return;
+      let chosenSite='AQ';
+      const rooms={
+        AQ:[
+          {key:'optical',icon:'⌁',name:'Optical Transmission Room',desc:'DWDM racks, optical test equipment and fiber transmission systems.'},
+          {key:'odf',icon:'▤',name:'ODF & Fiber Patching Room',desc:'Optical distribution frames, patch panels and fiber management.'},
+          {key:'nms',icon:'▣',name:'Network Monitoring Room',desc:'Network monitoring consoles, dashboard displays and equipment racks.'}
+        ],
+        HA:[
+          {key:'server',icon:'▥',name:'Server Room',desc:'Server cabinets, network racks and room infrastructure.'},
+          {key:'ups',icon:'▤',name:'UPS & Battery Room',desc:'UPS cabinets, battery modules and power distribution.'},
+          {key:'monitoring',icon:'▣',name:'Network Monitoring Room',desc:'Monitoring workstations, wall displays and network racks.'}
+        ]
+      };
+      enterButton.addEventListener('click',event=>{
+        event.preventDefault();event.stopImmediatePropagation();
+        siteScreen.classList.add('is-open');siteScreen.setAttribute('aria-hidden','false');
+      },true);
+      siteScreen.querySelectorAll('[data-optical-site]').forEach(button=>{
+        button.addEventListener('click',()=>{
+          chosenSite=button.dataset.opticalSite==='HA'?'HA':'AQ';
+          window.selectedOpticalSite=chosenSite;
+          document.documentElement.dataset.opticalSite=chosenSite.toLowerCase();
+          siteLabel.textContent=chosenSite+' SITE · SELECT A ROOM';
+          grid.innerHTML=rooms[chosenSite].map(room=>`
+            <button class="ors-card" type="button" data-room-key="${room.key}">
+              <span class="ors-card-icon" aria-hidden="true">${room.icon}</span>
+              <span><h3>${room.name}</h3><p>${room.desc}</p></span>
+              <span class="ors-enter">Enter room →</span>
+            </button>`).join('');
+          siteScreen.classList.remove('is-open');siteScreen.setAttribute('aria-hidden','true');
+          roomScreen.classList.add('is-open');roomScreen.setAttribute('aria-hidden','false');
+        });
+      });
+      document.getElementById('ors-back').addEventListener('click',()=>{
+        roomScreen.classList.remove('is-open');roomScreen.setAttribute('aria-hidden','true');
+        siteScreen.classList.add('is-open');siteScreen.setAttribute('aria-hidden','false');
+      });
+      grid.addEventListener('click',event=>{
+        const button=event.target.closest('[data-room-key]');if(!button)return;
+        const app=window.app;
+        if(!app||typeof app.openOpticalSampleRoom!=='function'){console.error('Walkthrough application is not ready.');return;}
+        app.openOpticalSampleRoom(chosenSite,button.dataset.roomKey);
+      });
+    })();
+  </script>
+</body>
+</html>
