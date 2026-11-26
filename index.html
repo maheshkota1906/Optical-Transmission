@@ -1967,6 +1967,110 @@
       // to the GLB: the authored room floor provides the actual landing surface.
     }
 
+
+    /* Procedural Optical Transmission sample rooms.
+       Replace these demo meshes with your own GLB models when ready. */
+    openOpticalSampleRoom(site) {
+      const code = site === 'HA' ? 'HA' : 'AQ';
+      const isHA = code === 'HA';
+      const level = new Level('sample-' + code.toLowerCase(), code + ' Site · Sample ' + (isHA ? 'HA / Server Room' : 'AQ / Optical Transmission Room'));
+      const root = level.rootGroup;
+      const mats = {
+        floor: new THREE.MeshStandardMaterial({ color: 0x26333c, roughness: 0.82 }),
+        wall: new THREE.MeshStandardMaterial({ color: 0x9caab2, roughness: 0.86 }),
+        wallDark: new THREE.MeshStandardMaterial({ color: 0x182832, roughness: 0.78 }),
+        trim: new THREE.MeshStandardMaterial({ color: 0x08b8e8, metalness: 0.55, roughness: 0.28, emissive: 0x003b52, emissiveIntensity: 0.5 }),
+        rack: new THREE.MeshStandardMaterial({ color: 0x202a31, metalness: 0.72, roughness: 0.36 }),
+        metal: new THREE.MeshStandardMaterial({ color: 0x77858d, metalness: 0.82, roughness: 0.28 }),
+        screen: new THREE.MeshStandardMaterial({ color: 0x071a24, emissive: 0x00aeea, emissiveIntensity: 1.2, roughness: 0.25 }),
+        green: new THREE.MeshStandardMaterial({ color: 0x193c32, emissive: 0x0a6b43, emissiveIntensity: 0.55 }),
+        amber: new THREE.MeshStandardMaterial({ color: 0x8b5017, emissive: 0xff8b18, emissiveIntensity: 0.7 })
+      };
+      const addBox = (name, w, h, d, x, y, z, mat, parent = root) => {
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
+        mesh.name = name; mesh.position.set(x,y,z); mesh.castShadow = true; mesh.receiveShadow = true; parent.add(mesh); return mesh;
+      };
+      const floor = addBox('Sample_Room_Floor',12,.18,14,0,-.09,0,mats.floor);
+      floor.userData.isWalkablePlatform = true;
+      addBox('Back_Wall',12,4.2,.22,0,2.1,-7,mats.wall);
+      addBox('Left_Wall',.22,4.2,14,-6,2.1,0,mats.wall);
+      addBox('Right_Wall',.22,4.2,14,6,2.1,0,mats.wall);
+      addBox('Front_Wall_Left',4.3,4.2,.22,-3.85,2.1,7,mats.wall);
+      addBox('Front_Wall_Right',4.3,4.2,.22,3.85,2.1,7,mats.wall);
+      addBox('Ceiling',12,.16,14,0,4.25,0,mats.wallDark);
+      addBox('Back_Accent',11.7,.12,.04,0,3.82,-6.86,mats.trim);
+      addBox('Door_Header',3.4,.25,.3,0,3.9,7,mats.wallDark);
+      addBox('Door_Left_Jamb',.18,3.8,.3,-1.65,1.9,7,mats.metal);
+      addBox('Door_Right_Jamb',.18,3.8,.3,1.65,1.9,7,mats.metal);
+
+      // Recessed linear ceiling lights.
+      for(let i=0;i<4;i++){
+        const light = new THREE.PointLight(0xb9eaff, isHA ? 1.05 : .85, 10, 2);
+        light.position.set(i%2===0?-3.2:3.2,3.95,i<2?-3.8:2.2); root.add(light);
+        addBox('Ceiling_LED_'+i,2.2,.035,.12,i%2===0?-3.2:3.2,4.12,i<2?-3.8:2.2,mats.trim);
+      }
+
+      // Wall-mounted cable tray and conduit runs.
+      addBox('Cable_Tray_Back',10,.12,.18,0,3.35,-6.55,mats.metal);
+      addBox('Cable_Tray_Left',.18,.12,11,-5.55,3.35,0,mats.metal);
+      addBox('Cable_Tray_Right',.18,.12,11,5.55,3.35,0,mats.metal);
+
+      const makeRack = (name,x,z,variant) => {
+        const rack = new THREE.Group(); rack.name=name; rack.position.set(x,0,z); root.add(rack);
+        const width=variant?1.35:1.05, height=2.55, depth=.82;
+        const body = new THREE.Mesh(new THREE.BoxGeometry(width,height,depth),mats.rack);
+        body.position.y=height/2; body.castShadow=true; body.receiveShadow=true; rack.add(body);
+        addBox(name+'_Top',width+.08,.08,depth+.08,x,height+.04,z,mats.metal);
+        addBox(name+'_Base',width+.08,.1,depth+.08,x,.05,z,mats.metal);
+        for(let n=0;n<8;n++){
+          const yy=.28+n*.27;
+          addBox(name+'_Equipment_'+n,width-.16,.19,.035,x,yy,z+depth/2+.025,n%3===0?mats.screen:mats.wallDark);
+          addBox(name+'_Status_LED_'+n,.035,.035,.025,x-width*.34,yy,z+depth/2+.05,n%2?mats.green:mats.amber);
+          addBox(name+'_Port_Row_'+n,.24,.045,.025,x+.18,yy,z+depth/2+.05,mats.metal);
+        }
+        addBox(name+'_Side_Label',.42,.18,.025,x,2.25,z+depth/2+.06,mats.trim);
+      };
+
+      if(isHA){
+        // HA sample: compact server room with server cabinets, UPS and battery bank.
+        [-4.65,-2.95,2.95,4.65].forEach((x,i)=>makeRack('HA_Server_Rack_'+(i+1),x,-2.8,i===1||i===2));
+        addBox('HA_UPS_Cabinet',1.25,1.85,.85,-3.8,.925,3.1,mats.wallDark);
+        addBox('HA_UPS_Display',.48,.24,.035,-3.8,1.45,3.55,mats.screen);
+        for(let i=0;i<4;i++) addBox('HA_Battery_Module_'+i,.62,1.05,.62,2.6+(i%2)*.75,.525,2.8+Math.floor(i/2)*.8,mats.rack);
+        addBox('HA_Monitor_Desk',2.2,.12,.85,0,.85,-5.65,mats.metal);
+        addBox('HA_Monitor_Screen',1.25,.82,.08,0,1.35,-5.95,mats.screen);
+      } else {
+        // AQ sample: optical transmission room with ODF, DWDM shelves and test bench.
+        [-4.65,-2.95,2.95,4.65].forEach((x,i)=>makeRack('AQ_Optical_Rack_'+(i+1),x,-2.8,i===1||i===2));
+        addBox('AQ_ODF_Frame',2.15,2.5,.28,0,1.25,-6.45,mats.rack);
+        for(let i=0;i<12;i++) addBox('AQ_ODF_Patch_Panel_'+i,1.85,.12,.08,0,.35+i*.18,-6.25,i%3===0?mats.trim:mats.metal);
+        addBox('AQ_Test_Bench',2.5,.12,.9,0,.9,3.7,mats.metal);
+        addBox('AQ_Test_Equipment',.65,.48,.52,-.55,1.2,3.65,mats.wallDark);
+        addBox('AQ_Test_Display',.42,.25,.035,-.55,1.25,3.93,mats.screen);
+        addBox('AQ_Fiber_Spool',.42,.42,.12,.65,1.18,3.65,mats.trim);
+      }
+
+      // Doorway floor threshold, safety markings and room ID panel.
+      for(let i=0;i<12;i++) addBox('Floor_Safety_Mark_'+i,.42,.012,.08,-2.3+i*.42,.012,6.55,mats.amber);
+      addBox('Room_ID_Panel',1.8,.42,.08,0,3.35,6.82,mats.wallDark);
+      addBox('Room_ID_Light',1.25,.045,.025,0,3.45,6.77,mats.trim);
+
+      level.spawnPosition.set(0,APP_CONFIG.eyeHeight,5.35);
+      level.spawnYaw = 0;
+      level.floorY = 0;
+      level.roomBounds.set(new THREE.Vector3(-5.8,0,-6.8),new THREE.Vector3(5.8,4.1,6.8));
+      this.rebuildLevelColliders(level);
+      this.loadLevel(level);
+      this.hideLoading();
+      this.setAppState(AppState.EXPLORE);
+      const start = document.getElementById('start-page');
+      if(start){start.classList.add('opacity-0');start.style.pointerEvents='none';setTimeout(()=>{start.style.display='none';},400);}
+      const selection = document.getElementById('site-selection-screen');
+      if(selection){selection.classList.remove('is-open');selection.setAttribute('aria-hidden','true');}
+      if(!this.isTouchCapableDevice && this.pointerControls) this.pointerControls.lock();
+      return level;
+    }
+
     loadLevel(newLevel) {
       if (this.selectedProduct) this.deselectProduct(false);
       this.setOutlineRoot(null);
@@ -5343,8 +5447,11 @@
           document.documentElement.dataset.opticalSite = site.toLowerCase();
           selection.classList.remove('is-open');
           selection.setAttribute('aria-hidden', 'true');
-          bypassSiteGate = true;
-          enterButton.click();
+          if (window.app && typeof window.app.openOpticalSampleRoom === 'function') {
+            window.app.openOpticalSampleRoom(site);
+          } else {
+            console.error('Optical Transmission sample room could not be initialized.');
+          }
         });
       });
     })();
