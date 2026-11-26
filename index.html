@@ -1504,7 +1504,7 @@
       this.renderer.setSize(window.innerWidth, window.innerHeight);      this.renderer.shadowMap.enabled = true;
       this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      this.renderer.toneMappingExposure = 1.0;
+      this.renderer.toneMappingExposure = 0.82;
       this.renderer.outputEncoding = THREE.sRGBEncoding; // correct colour: textures look as authored
       this.scene.environment = buildEnvTexture(this.renderer);
       this.loadEnvironmentHDRI();
@@ -1571,11 +1571,11 @@
 
     setupLighting() {
       // Soft ambient light
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.52);
       this.scene.add(ambientLight); this.rig.amb = ambientLight;
 
       // Primary daylight sun
-      const sunLight = new THREE.DirectionalLight(0xfff8ee, 1.4);
+      const sunLight = new THREE.DirectionalLight(0xfff8ee, 0.95);
       sunLight.position.set(8, 14, 6);
       sunLight.castShadow = true;
       sunLight.shadow.mapSize.set(2048, 2048);
@@ -1591,7 +1591,7 @@
       this.scene.add(sunLight); this.rig.sun = sunLight;
 
       // Soft architectural warm fill (replaces colored artificial lighting)
-      const architecturalFill = new THREE.PointLight(0xfff7ed, 0.6, 16);
+      const architecturalFill = new THREE.PointLight(0xfff7ed, 0.28, 16);
       architecturalFill.position.set(-3, 3.2, -2);
       this.scene.add(architecturalFill); this.rig.fill = architecturalFill;
 
@@ -5341,8 +5341,11 @@
       if (!rg.amb) return;
       const p = LIGHT_PRESETS[s.lightPreset] || LIGHT_PRESETS.daylight;
       const gl = (lv && lv.glbLights) || [], L = (lv && lv.lightingCfg) || {};
+      const isServerRoom = /server room/i.test(String(lv && lv.name || '')) || /ServerRoom_Optimized_under20MB\.glb/i.test(String(lv && lv.sourceFile || ''));
       const k = L.rig != null ? L.rig : (gl.length ? 0.8 : 1);
-      rg.amb.intensity = p.amb * k; rg.sun.intensity = p.sun * k; rg.fill.intensity = p.fill * k;
+      const roomLightingScale = isServerRoom ? 0.62 : 1;
+      rg.amb.intensity = p.amb * k * roomLightingScale; rg.sun.intensity = p.sun * k * roomLightingScale; rg.fill.intensity = p.fill * k * roomLightingScale;
+      if (isServerRoom && this.renderer) this.renderer.toneMappingExposure = Math.min(s.exposure, 0.82);
       rg.sun.color.set(p.color); rg.fill.color.set(p.color);
       rg.sun.castShadow = s.shadows;
 
@@ -5351,14 +5354,14 @@
         const dlOn = s.lightPreset === 'exhibition' || s.lightPreset === 'daylight';
         rg.downlights.forEach(dl => {
           dl.visible = dlOn;
-          dl.intensity = dlOn ? (1.5 * k) : 0;
+          dl.intensity = dlOn ? (1.5 * k * roomLightingScale) : 0;
         });
       }
 
       this.scene.traverse((o) => {
         if (o.isMesh && o.material) [].concat(o.material).forEach((m) => {
           if (!m || !m.isMeshStandardMaterial) return;
-          m.envMapIntensity = s.reflections;
+          m.envMapIntensity = s.reflections * (isServerRoom ? 0.62 : 1);
           if (m.userData.tint) return;
           if (m.name === 'M_LightEmissive' || (m.userData && m.userData.origName === 'M_LightEmissive')) {
             m.emissive.set(0xfff5d6);
@@ -5369,7 +5372,7 @@
           }
         });
       });
-      gl.forEach((l) => { l.visible = s.glbLights; l.intensity = l.userData.base * s.glbLightScale * (L.glbScale || 1); });
+      gl.forEach((l) => { l.visible = s.glbLights; l.intensity = l.userData.base * s.glbLightScale * (L.glbScale || 1) * (isServerRoom ? 0.55 : 1); });
     }
 
     onWindowResize() {
