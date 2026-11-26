@@ -226,8 +226,8 @@
     @keyframes welcome-rise { from { opacity: 0; transform: translateY(18px) scale(.98); } to { opacity: 1; transform: none; } }
     #start-page .welcome-content { animation: welcome-rise .7s cubic-bezier(.2,.8,.2,1) both; }
     #preview-canvas, #preview-hint, #slideshow::after { display: none; }
-    #slideshow.preview-on { background: radial-gradient(ellipse at 50% 85%, rgba(56,189,248,.38), transparent 62%), linear-gradient(180deg, var(--surface2), var(--surface)); }
-    :root[data-theme="midnight"] #slideshow.preview-on { background: radial-gradient(ellipse at 50% 85%, rgba(56,189,248,.55), transparent 65%), linear-gradient(180deg, #343a52, #1f2336); }
+    #slideshow.preview-on { background: radial-gradient(ellipse at 50% 82%, rgba(15,91,125,.22), transparent 58%), linear-gradient(145deg, #111923 0%, #080d14 58%, #05080d 100%); }
+    :root[data-theme="midnight"] #slideshow.preview-on { background: radial-gradient(ellipse at 50% 82%, rgba(15,91,125,.22), transparent 58%), linear-gradient(145deg, #111923 0%, #080d14 58%, #05080d 100%); }
     #slideshow.preview-on::after { display: block; content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .5;
       background: repeating-linear-gradient(0deg, rgba(120,200,255,.07) 0 1px, transparent 1px 3px); animation: holo-scan 6s linear infinite; }
     @keyframes holo-scan { from { background-position: 0 0; } to { background-position: 0 24px; } }
@@ -4561,12 +4561,12 @@
     initPreview() {
       const cv = document.getElementById('preview-canvas');
       const r = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true });
-      r.outputEncoding = THREE.sRGBEncoding; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 0.78;
+      r.outputEncoding = THREE.sRGBEncoding; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 0.64;
       const sc = new THREE.Scene(); sc.environment = buildEnvTexture(r);
-      // Softer inspection lighting keeps the GLB's authored colours and surface details readable.
-      const key = new THREE.DirectionalLight(0xffffff, 0.62); key.position.set(3, 4, 5);
-      const rim = new THREE.DirectionalLight(0xbcd0ff, 0.22); rim.position.set(-4, 2, -3);
-      sc.add(key, rim, new THREE.AmbientLight(0xffffff, 0.12));
+      // Dark, restrained inspection lighting; retain enough key light to read labels and panel details.
+      const key = new THREE.DirectionalLight(0xffffff, 0.46); key.position.set(3, 4, 5);
+      const rim = new THREE.DirectionalLight(0x9bb8d5, 0.12); rim.position.set(-4, 2, -3);
+      sc.add(key, rim, new THREE.AmbientLight(0xffffff, 0.075));
       const pivot = new THREE.Group(); sc.add(pivot);
       const c = document.createElement('canvas'); c.width = c.height = 128;
       const x = c.getContext('2d'), gr = x.createRadialGradient(64, 64, 0, 64, 64, 64);
