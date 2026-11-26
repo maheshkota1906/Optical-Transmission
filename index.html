@@ -497,8 +497,7 @@
   <!-- Product Callout: dot + stem + card, anchored to the selected product -->
   <div id="callout-root" class="hidden fixed inset-0 z-30 pointer-events-none">
     <svg id="callout-svg" class="absolute inset-0 w-full h-full"><line id="callout-line" stroke="var(--sel)" stroke-width="1.5" stroke-linecap="round"/></svg>
-    <div id="callout-dot" class="absolute w-2.5 h-2.5 -ml-[5px] -mt-[5px] rounded-full sel-dot"></div>    <aside id="product-callout" class="absolute glass-panel rounded-2xl pointer-events-auto">
-      <div id="slideshow" class="relative h-64 sm:h-72 bg-neutral-100 overflow-hidden hidden rounded-t-2xl">
+    <div id="callout-dot" class="absolute w-2.5 h-2.5 -ml-[5px] -mt-[5px] rounded-full sel-dot"></div>    <aside id="product-callout" class="absolute glass-panel rounded-2xl pointer-events-auto">      <div id="slideshow" class="relative h-64 sm:h-72 bg-neutral-100 overflow-hidden hidden rounded-t-2xl">
         <div id="slides" class="flex h-full transition-transform duration-300 ease-out"></div>
         <canvas id="preview-canvas" class="absolute inset-0 w-full h-full cursor-grab touch-none"></canvas>
         <span id="preview-hint" class="absolute bottom-2.5 left-2.5 text-[10px] font-medium px-2 py-0.5 rounded-md pointer-events-none"><i class="fa-solid fa-rotate mr-1"></i>3D preview · drag to rotate · scroll to zoom</span>
@@ -997,8 +996,7 @@
       Object.keys(mat).forEach((k) => {
         if (mat[k] && typeof mat[k].dispose === 'function') {
           mat[k].dispose();        }      });
-      mat.dispose();
-    }
+      mat.dispose();    }
   }
 
   /* ==========================================================================
@@ -1497,8 +1495,7 @@
       this.camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 120);
       this.camera.rotation.order = 'YXZ'; // Yaw then pitch
       this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-      this.renderer.setSize(window.innerWidth, window.innerHeight);
-      this.renderer.shadowMap.enabled = true;
+      this.renderer.setSize(window.innerWidth, window.innerHeight);      this.renderer.shadowMap.enabled = true;
       this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
       this.renderer.toneMappingExposure = 1.0;
@@ -1997,8 +1994,7 @@
       return Array.from({ length: n }, (_, i) => {        const h = (hue + i * 28) % 360;
         const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='600' height='360'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='hsl(${h},18%,78%)'/><stop offset='1' stop-color='hsl(${h},24%,42%)'/></linearGradient></defs><rect width='600' height='360' fill='url(#g)'/><text x='300' y='176' font-family='Arial' font-size='34' font-weight='700' fill='white' text-anchor='middle'>${text}</text><text x='300' y='218' font-family='Arial' font-size='20' fill='white' fill-opacity='0.8' text-anchor='middle'>Photo ${i + 1}</text></svg>`;
         return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
-      });
-    }
+      });    }
 
     /* Manual import: pick a .glb and (optionally) its .json together */
     handleGLBUpload(e) {
@@ -2497,8 +2493,7 @@
     }
 
     initAnimUI(p) {
-      p.animState = 'idle'; p.animDone = 0;
-      document.getElementById('anim-btn').classList.toggle('hidden', !p.clips.length);
+      p.animState = 'idle'; p.animDone = 0;      document.getElementById('anim-btn').classList.toggle('hidden', !p.clips.length);
       document.getElementById('anim-btn').classList.toggle('flex', !!p.clips.length);
       this.paintAnimBtn(p);
     }
@@ -2998,7 +2993,6 @@
        ------------------------------------------------------------------------ */
     setAppState(nextState) {
       this.currentState = nextState;
-
       const welcomeOverlay = document.getElementById('welcome-overlay');
       const exitBtn = document.getElementById('exit-walkthrough-btn');
 
@@ -3497,8 +3491,7 @@
           c.startYaw = this.cameraYaw;
           c.targetYaw = c.startYaw;
           return true;
-        }
-        this.playerVelocity.set(0, 0, 0);
+        }        this.playerVelocity.set(0, 0, 0);
         this.ladderClimb = null;
       }
       return true;
@@ -3997,8 +3990,7 @@
             return n.y >= 0.55;
           });
           if (ph) platformFloor = ph.point.y;
-        }
-      }
+        }      }
       if (platformFloor !== null) return platformFloor;
 
       // The server-room entrance has a real floor-height transition.
@@ -4497,8 +4489,7 @@
       if (this.slideCount > 1) this.slideTimer = setInterval(() => this.goSlide(this.slideIdx + 1), 3500);
     }
 
-    stopSlides() {
-      if (this.slideTimer) { clearInterval(this.slideTimer); this.slideTimer = null; }
+    stopSlides() {      if (this.slideTimer) { clearInterval(this.slideTimer); this.slideTimer = null; }
     }
 
     /* Card sits BESIDE the product (never over it); a line runs from a dot on the product to the card edge.
@@ -4997,8 +4988,7 @@
         this.unlockDeveloperSettings();
         return;
       }
-      const p = document.getElementById('settings-panel');
-      const open = force !== undefined ? force : p.classList.contains('hidden');
+      const p = document.getElementById('settings-panel');      const open = force !== undefined ? force : p.classList.contains('hidden');
       p.classList.toggle('hidden', !open); p.classList.toggle('flex', open);
       if (open && this.pointerControls.isLocked) this.pointerControls.unlock();
     }
@@ -5268,6 +5258,44 @@
     .ots-site-arrow{color:#65d9ff;font-size:20px}
     .ots-footer{text-align:center;color:#668496;font-size:10px;letter-spacing:.08em}
     @media(max-width:620px){.ots-wrap{gap:18px}.ots-topline{font-size:8px}.ots-site-grid{grid-template-columns:1fr}.ots-site-button{min-height:88px;padding:14px}.ots-map-image{height:260px}.ots-heading p{font-size:12px}}
+
+    /* Full-viewport site selection: use the network map as the immersive background */
+    html:has(#site-selection-screen.is-open),html:has(#site-selection-screen.is-open) body{overflow:hidden!important}
+    #site-selection-screen.is-open{overflow:hidden}
+    .ots-wrap{position:relative;z-index:2;width:100%;max-width:none;min-height:100svh;height:100svh;padding:clamp(18px,3.2vw,48px) clamp(18px,5vw,76px);gap:0;justify-content:space-between}
+    .ots-map-frame{position:fixed;z-index:0;inset:0;width:100vw;height:100svh;border:0;border-radius:0;box-shadow:none;background:#061522}
+    .ots-map-frame:before{display:none}
+    .ots-map-frame:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(3,15,25,.55) 0%,rgba(3,15,25,.08) 34%,rgba(3,15,25,.12) 55%,rgba(3,15,25,.78) 100%);pointer-events:none}
+    .ots-map-image{width:100%;height:100%;min-height:100svh;object-fit:cover;object-position:center}
+    .ots-map-caption{display:none}
+    .ots-topline{position:relative;z-index:2;width:100%;flex:none}
+    .ots-heading{position:relative;z-index:2;margin:clamp(22px,5vh,64px) auto 0;max-width:820px}
+    .ots-heading h2{font-size:clamp(38px,6vw,76px);text-shadow:0 3px 24px rgba(0,0,0,.55)}
+    .ots-heading p{color:#e1f4ff;text-shadow:0 2px 14px rgba(0,0,0,.8)}
+    .ots-choice-label{position:relative;z-index:2;margin:auto auto 16px;color:#d6f3ff;text-shadow:0 2px 12px #00101d}
+    .ots-site-grid{position:relative;z-index:2;width:min(760px,100%);margin:0 auto 10px}
+    .ots-site-button{background:rgba(4,25,40,.78);border-color:rgba(104,216,255,.65);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 12px 36px rgba(0,0,0,.28)}
+    .ots-site-button:hover{background:rgba(5,48,70,.88)}
+    .ots-footer{position:relative;z-index:2;margin-top:10px;color:#b0d5e8;text-shadow:0 2px 10px #00101d}
+    @media(max-width:620px){
+      .ots-wrap{padding:18px 16px max(18px,env(safe-area-inset-bottom));gap:0}
+      .ots-topline{font-size:8px;letter-spacing:.12em}
+      .ots-heading{margin-top:clamp(18px,4vh,38px)}
+      .ots-heading h2{font-size:clamp(36px,11vw,54px)}
+      .ots-heading p{font-size:12px;max-width:420px}
+      .ots-site-grid{grid-template-columns:1fr;gap:10px;width:min(440px,100%);margin-bottom:4px}
+      .ots-site-button{min-height:76px;padding:12px 15px}
+      .ots-site-code{width:46px;height:46px}
+      .ots-choice-label{margin-bottom:10px}
+      .ots-footer{font-size:8px}
+    }
+    @media(max-height:700px) and (min-width:621px){
+      .ots-heading{margin-top:12px}
+      .ots-heading h2{font-size:clamp(34px,5vh,54px)}
+      .ots-heading p{margin-top:8px}
+      .ots-site-button{min-height:82px}
+    }
+
   </style>
   <section id="site-selection-screen" aria-label="Optical Transmission site selection" aria-hidden="true">
     <div class="ots-wrap">
