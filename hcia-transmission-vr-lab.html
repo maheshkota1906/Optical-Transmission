@@ -15,6 +15,8 @@
   #ws2d canvas{display:block;touch-action:none;border-radius:6px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
   body.mode2d #ws2d{display:flex}
   body.mode2d #hud, body.mode2d #VRButton{display:none !important}
+  body.hcia-embedded.mode2d>canvas{display:none !important}
+  body.hcia-embedded #ws2d{z-index:10}
   #importFile{display:none}
 </style>
 <script type="importmap">
@@ -2240,13 +2242,18 @@ function loop() {
   if (UI.toast && performance.now() - UI.toastT > 4500 && performance.now() - UI.toastT < 4600) draw();
   if (!is2D || renderer.xr.isPresenting) renderer.render(scene, camera);
 }
-{ // boot: resume the last slot, show the Home screen
+{ // boot: resume progress; embedded mode opens the requested HCIA tool in the 2D desk
   const c = store.cur && store.slots[store.cur];
   try { if (c) loadScenario(c.scn, c.mode, false); else loadScenario(0, 'guided'); } catch (e) { console.warn('Saved progress could not be loaded, starting fresh', e); M = null; loadScenario(0, 'guided'); }
-  UI.app = 'home';
+  const params = new URLSearchParams(location.search);
+  const embedded = params.get('embed') === '1';
+  const requestedApp = params.get('app');
+  const validApps = ['home', 'brief', 'lct', 'nce', 'cli', 'topo', 'racks'];
+  UI.app = embedded && validApps.includes(requestedApp) ? requestedApp : 'home';
   let view = null; try { view = localStorage.getItem('hciaVRcfg.view'); } catch (e) { }
-  set2D(view !== '3d', true);
-  if (!view && navigator.xr && navigator.xr.isSessionSupported) navigator.xr.isSessionSupported('immersive-vr').then(ok => { if (ok) set2D(false, true); }).catch(() => { });
+  if (embedded) document.body.classList.add('hcia-embedded');
+  set2D(embedded || view !== '3d', true);
+  if (!embedded && !view && navigator.xr && navigator.xr.isSessionSupported) navigator.xr.isSessionSupported('immersive-vr').then(ok => { if (ok) set2D(false, true); }).catch(() => { });
 }
 LOGO.onReady.push(() => draw());
 try { const fav = document.createElement('link'); fav.rel = 'icon'; fav.href = LOGO_EMBLEM_SRC; document.head.appendChild(fav); } catch (e) { }
