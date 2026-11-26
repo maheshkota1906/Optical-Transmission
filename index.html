@@ -2463,8 +2463,9 @@
     }
 
     /* Prints a starter JSON for the loaded GLB: call app.exportTemplate() in the console */
-    exportTemplate() {
-      const lvl = this.currentLevel;
+    exportTemplate(levelOverride = null) {
+      const lvl = levelOverride || this.currentLevel;
+      if (!lvl) throw new Error('No loaded room is available to export a template for.');
       const cams = [];
       lvl.rootGroup.traverse((o) => { if (o.isCamera) cams.push(o.name); });
       const products = [];
@@ -2563,7 +2564,7 @@
       level.hingedDoors = !!(cfg && cfg.hingedDoors === true);   // true = old swinging door
       this.buildInteractives(level);
       console.info(`[Walkthrough] "${level.name}": ${registered} products, start camera: ${camName || 'none (default spawn)'}`);
-      if (!cfg) console.log('JSON template for this GLB:\n' + JSON.stringify(this.exportTemplate(), null, 2));
+      if (!cfg) console.log('JSON template for this GLB:\n' + JSON.stringify(this.exportTemplate(level), null, 2));
 
       this.rebuildLevelColliders(level);
       this.loadLevel(level);
