@@ -1970,9 +1970,29 @@
 
     /* Procedural Optical Transmission sample rooms.
        Replace these demo meshes with your own GLB models when ready. */
-    openOpticalSampleRoom(site) {
+    async openOpticalSampleRoom(site) {
       const code = site === 'HA' ? 'HA' : 'AQ';
       const isHA = code === 'HA';
+      // If a replacement GLB has been uploaded, prefer it; otherwise build the procedural demo room.
+      const replacementPath = 'Assets/Rooms/' + code + '_Room.glb';
+      try {
+        const replacementUrl = new URL(replacementPath, location.href);
+        const response = await fetch(replacementUrl.href, { cache: 'no-cache' });
+        if (response.ok) {
+          this.showLoading('Loading ' + code + ' Site', 'Loading your GLB room...');
+          await this.parseAndSetup(await response.arrayBuffer(), new URL('.', replacementUrl).href, null, code + '_Room.glb');
+          this.hideLoading();
+          this.setAppState(AppState.EXPLORE);
+          const startPage = document.getElementById('start-page');
+          if (startPage) { startPage.classList.add('opacity-0'); startPage.style.pointerEvents='none'; setTimeout(()=>{startPage.style.display='none';},400); }
+          const selectionScreen = document.getElementById('site-selection-screen');
+          if (selectionScreen) { selectionScreen.classList.remove('is-open'); selectionScreen.setAttribute('aria-hidden','true'); }
+          if (!this.isTouchCapableDevice && this.pointerControls) this.pointerControls.lock();
+          return this.currentLevel;
+        }
+      } catch (err) {
+        console.warn('[Optical Transmission] Replacement GLB not available; using the built-in sample room.', err);
+      }
       const level = new Level('sample-' + code.toLowerCase(), code + ' Site · Sample ' + (isHA ? 'HA / Server Room' : 'AQ / Optical Transmission Room'));
       const root = level.rootGroup;
       const mats = {
@@ -5398,64 +5418,3 @@
       .ots-heading h2{font-size:clamp(34px,5vh,54px)}
       .ots-heading p{margin-top:8px}
       .ots-site-button{min-height:82px}
-    }
-
-  </style>
-  <section id="site-selection-screen" aria-label="Optical Transmission site selection" aria-hidden="true">
-    <div class="ots-wrap">
-      <div class="ots-topline"><span>OPTICAL TRANSMISSION · NETWORK OVERVIEW</span><span class="ots-live">SITE SELECTION</span></div>
-      <div class="ots-heading">
-        <h2>Select Your <span>Site</span></h2>
-        <p>Choose the Optical Transmission location you want to explore. Select AQ or HA to enter its 3D environment.</p>
-      </div>
-      <div class="ots-map-frame">
-        <img class="ots-map-image" src="https://raw.githubusercontent.com/maheshkota1906/Optical-Transmission/main/Neon%20Mountain%20Network%20Site%20Selection.png" alt="Neon Mountain Network Site Selection map showing the AQ and HA network sites" loading="eager">
-        <div class="ots-map-caption"><span>Network site selection map</span><span>Choose one location below</span></div>
-      </div>
-      <div class="ots-choice-label">Choose a destination</div>
-      <div class="ots-site-grid">
-        <button class="ots-site-button" type="button" data-optical-site="AQ" aria-label="Enter AQ site">
-          <span class="ots-site-code">AQ</span><span class="ots-site-copy"><strong>AQ Site</strong><small>Open the AQ Optical Transmission environment</small></span><span class="ots-site-arrow" aria-hidden="true">→</span>
-        </button>
-        <button class="ots-site-button" type="button" data-optical-site="HA" aria-label="Enter HA site">
-          <span class="ots-site-code">HA</span><span class="ots-site-copy"><strong>HA Site</strong><small>Open the HA Optical Transmission environment</small></span><span class="ots-site-arrow" aria-hidden="true">→</span>
-        </button>
-      </div>
-      <div class="ots-footer">OPTICAL TRANSMISSION · INTERACTIVE 3D EXPERIENCE</div>
-    </div>
-  </section>
-  <script>
-    (() => {
-      let bypassSiteGate = false;
-      const enterButton = document.getElementById('sp-enter');
-      const selection = document.getElementById('site-selection-screen');
-      if (!enterButton || !selection) return;
-
-      // Intercept the first showroom click and show the network map.
-      enterButton.addEventListener('click', event => {
-        if (bypassSiteGate) { bypassSiteGate = false; return; }
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        selection.classList.add('is-open');
-        selection.setAttribute('aria-hidden', 'false');
-      }, true);
-
-      selection.querySelectorAll('[data-optical-site]').forEach(button => {
-        button.addEventListener('click', () => {
-          const site = button.dataset.opticalSite;
-          window.selectedOpticalSite = site;
-          document.documentElement.dataset.opticalSite = site.toLowerCase();
-          selection.classList.remove('is-open');
-          selection.setAttribute('aria-hidden', 'true');
-          if (window.app && typeof window.app.openOpticalSampleRoom === 'function') {
-            window.app.openOpticalSampleRoom(site);
-          } else {
-            console.error('Optical Transmission sample room could not be initialized.');
-          }
-        });
-      });
-    })();
-  </script>
-
-</body>
-</html>
