@@ -130,7 +130,7 @@
       const h = hitPanel(e);
       if (h) {
         pointerInside = true; send('move', h); canvas.style.cursor = 'pointer';
-        if (e.buttons === 0) e.stopImmediatePropagation();
+        e.stopImmediatePropagation();
       } else if (pointerInside) {
         pointerInside = false; send('leave'); canvas.style.cursor = '';
       }
