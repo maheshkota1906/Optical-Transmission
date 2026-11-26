@@ -74,36 +74,61 @@ function drawLogo(c, which, x, y, w, h) { const im = LOGO[which]; if (!im.comple
 function brandArcs(c, cx, cy, r, lw, alpha = 1) { c.save(); c.globalAlpha = alpha; c.lineCap = 'round'; c.lineWidth = lw; [['#EAC97F', r], ['#CE4F5A', r - lw * 1.6], ['#00BCFF', r - lw * 3.2]].forEach(([col, rr2]) => { c.strokeStyle = col; c.beginPath(); c.arc(cx, cy, rr2, Math.PI * 1.08, Math.PI * 1.92); c.stroke(); }); c.restore(); }
 function brandStripe(c, x, y, w, h) { const seg = [['#00BCFF', 0.5], ['#CE4F5A', 0.25], ['#EAC97F', 0.25]]; let xx = x; for (const [col, f] of seg) { c.fillStyle = col; c.fillRect(xx, y, w * f, h); xx += w * f; } }
 
-/* ---------- room ---------- */
-{
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(24, 24), new THREE.MeshStandardMaterial({ map: canvasTex(512, 512, (g, w, h) => {
-    g.fillStyle = '#0E2A55'; g.fillRect(0, 0, w, h); g.strokeStyle = '#1A4078'; g.lineWidth = 6;
-    for (let i = 0; i <= 4; i++) { g.beginPath(); g.moveTo(i * 128, 0); g.lineTo(i * 128, h); g.stroke(); g.beginPath(); g.moveTo(0, i * 128); g.lineTo(w, i * 128); g.stroke(); }
-  }), roughness: 0.9 }));
-  floor.material.map.wrapS = floor.material.map.wrapT = THREE.RepeatWrapping; floor.material.map.repeat.set(20, 20);
-  floor.rotation.x = -Math.PI / 2; scene.add(floor);
-  const wallMat = new THREE.MeshStandardMaterial({ color: 0x0C2550, roughness: 1 });
-  const back = new THREE.Mesh(new THREE.PlaneGeometry(14, 4.2), wallMat); back.position.set(0, 2.1, -5.2); scene.add(back);
-  const left = new THREE.Mesh(new THREE.PlaneGeometry(12, 4.2), wallMat); left.position.set(-6, 2.1, -1); left.rotation.y = Math.PI / 2; scene.add(left);
-  const right = left.clone(); right.position.x = 6; right.rotation.y = -Math.PI / 2; scene.add(right);
-  const drawSign = (g, w, h) => {
-    const gr = g.createLinearGradient(0, 0, w, 0); gr.addColorStop(0, '#0A2A5E'); gr.addColorStop(1, '#06183A'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
-    brandStripe(g, 0, h - 14, w, 14);
-    g.fillStyle = '#ffffff'; g.beginPath(); g.roundRect(18, 16, 250, 236, 24); g.fill();
-    drawLogo(g, 'full', 26, 20, 234, 228);
-    brandArcs(g, w - 120, 262, 112, 18, 0.9);
-    g.fillStyle = '#ffffff'; g.font = `700 84px ${FONT}`; g.textBaseline = 'middle'; g.fillText('HCIA-Transmission Lab', 300, 86);
-    g.fillStyle = '#00BCFF'; g.font = `500 40px ${FONT}`; g.fillText('Configuration simulator  ·  Web LCT · iMaster NCE-T · CLI', 302, 160);
-    g.fillStyle = '#EAC97F'; g.font = `700 36px ${FONT}`; g.fillText('MY-COMMUNICATION  ·  TOGETHER WE CAN MAKE IT', 302, 222);
-  };
-  const signTex = canvasTex(1600, 286, drawSign);
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(4.48, 0.8), new THREE.MeshBasicMaterial({ map: signTex }));
-  LOGO.onReady.push(() => { drawSign(signTex.image.getContext('2d'), 1600, 286); signTex.needsUpdate = true; });
-  sign.position.set(0, 3.78, -5.15); scene.add(sign);
-  for (const x of [-2.4, 0, 2.4]) { const s = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.03, 3), new THREE.MeshBasicMaterial({ color: 0xdbe8ff })); s.position.set(x, 3.8, -2); scene.add(s); }
-  const trayMat = new THREE.MeshStandardMaterial({ color: 0xEAC97F, roughness: 0.6 });
-  const tb = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.01, 0.34), trayMat); tb.position.set(0, 2.40, -2.8); scene.add(tb);
-  for (const dz of [-0.17, 0.17]) { const s = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.08, 0.01), trayMat); s.position.set(0, 2.44, -2.8 + dz); scene.add(s); }
+/* ---------- Client Server Room GLB environment ---------- */
+const SERVER_ROOM_GLB = new URL('Assets/Rooms/ServerRoom_Optimized_under20MB.glb', location.href);
+const roomLoader = new GLTFLoader();
+let serverRoomRoot = null;
+let serverRoomBounds = new THREE.Box3();
+let serverRoomAssets = [];
+try {
+  const roomGltf = await roomLoader.loadAsync(SERVER_ROOM_GLB.href);
+  serverRoomRoot = roomGltf.scene;
+  serverRoomRoot.name = 'ClientServerRoomGLB';
+  serverRoomRoot.updateMatrixWorld(true);
+  const initialBounds = new THREE.Box3().setFromObject(serverRoomRoot);
+  if (initialBounds.isEmpty()) throw new Error('ServerRoom GLB has no visible geometry.');
+  const initialSize = initialBounds.getSize(new THREE.Vector3());
+  const horizontalSpan = Math.max(initialSize.x, initialSize.z);
+  if (!Number.isFinite(horizontalSpan) || horizontalSpan <= 0) throw new Error('ServerRoom GLB has invalid dimensions.');
+  serverRoomRoot.scale.setScalar(14 / horizontalSpan);
+  serverRoomRoot.updateMatrixWorld(true);
+  const scaledBounds = new THREE.Box3().setFromObject(serverRoomRoot);
+  const scaledCenter = scaledBounds.getCenter(new THREE.Vector3());
+  serverRoomRoot.position.x -= scaledCenter.x;
+  serverRoomRoot.position.y -= scaledBounds.min.y;
+  serverRoomRoot.position.z -= scaledCenter.z;
+  serverRoomRoot.updateMatrixWorld(true);
+  serverRoomBounds.setFromObject(serverRoomRoot);
+  serverRoomRoot.traverse(node => {
+    if (!node.isMesh) return;
+    node.castShadow = true;
+    node.receiveShadow = true;
+    node.userData.kind = 'roomAsset';
+    node.userData.assetName = node.name || node.parent?.name || 'Server Room equipment';
+    serverRoomAssets.push(node);
+  });
+  scene.add(serverRoomRoot);
+  scene.background = new THREE.Color(0x071A3B);
+  scene.fog = null;
+  const roomSize = serverRoomBounds.getSize(new THREE.Vector3());
+  const spawnZ = serverRoomBounds.max.z - Math.max(1.8, roomSize.z * 0.16);
+  rig.position.set(0, 0, 0);
+  camera.position.set(0, 1.6, spawnZ);
+  yaw = 0;
+  pitch = -0.08;
+  camera.rotation.set(pitch, yaw, 0);
+  rigTarget.set(0, 0, 0);
+  console.info('[HCIA] Client ServerRoom GLB loaded:', SERVER_ROOM_GLB.href, 'assets:', serverRoomAssets.length, 'bounds:', roomSize.toArray());
+  const loadEl = document.getElementById('load');
+  if (loadEl) loadEl.remove();
+} catch (roomError) {
+  console.error('[HCIA] Could not load the required ServerRoom GLB:', roomError);
+  const loadEl = document.getElementById('load');
+  if (loadEl) {
+    loadEl.textContent = 'Server Room model could not be loaded. Check Assets/Rooms/ServerRoom_Optimized_under20MB.glb and refresh.';
+    loadEl.style.zIndex = '20';
+  }
+  throw roomError;
 }
 
 /* =====================================================================
@@ -2140,9 +2165,13 @@ function syncWorld() {
 const rigTarget = new THREE.Vector3(0, 0, 0.2);
 function goTo(where) {
   if (is2D && !renderer.xr.isPresenting) { if (where !== 'home') { UI.app = 'racks'; UI.rackSite = where; } UI.menu = null; draw(); return; }
-  UI.rackSite = where; if (where === 'home') rigTarget.set(0, 0, 0.2); else { const s = SITES.find(x => x.id === where); rigTarget.set(s.x, 0, -1.2); panelLow = true; draw(); } if (where === 'home') { panelLow = false; draw(); } }
+  UI.rackSite = where;
+  if (where === 'home') { rigTarget.set(0, 0, 0); panelLow = false; }
+  else { const site = SITES.find(x => x.id === where); if (site) rigTarget.set(site.x, 0, -1.2); panelLow = true; }
+  draw();
+}
 const raycaster = new THREE.Raycaster(), ndc = new THREE.Vector2();
-const pickables = [panel, ...boardMeshes];
+const pickables = [panel, ...boardMeshes, ...serverRoomAssets];
 let hoverBoard = null;
 function handleHover(h) {
   hoverBoard = h && h.object.userData.kind === 'board' ? h.object : null;
@@ -2151,7 +2180,22 @@ function handleHover(h) {
   if (id !== prev) draw();
 }
 function panelClick(x, y) { for (let i = hits.length - 1; i >= 0; i--) { const r = hits[i]; if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) { r.fn(); draw(); return; } } }
-function handleSelect(h) { if (!h) return; if (h.object === panel) panelClick(h.uv.x * PW, (1 - h.uv.y) * PH); else if (h.object.userData.kind === 'board') boardClick(h.object); }
+function handleSelect(h) {
+  if (!h) return;
+  if (h.object === panel) { panelClick(h.uv.x * PW, (1 - h.uv.y) * PH); return; }
+  if (h.object.userData.kind === 'board') { boardClick(h.object); return; }
+  if (h.object.userData.kind === 'roomAsset') {
+    const name = String(h.object.userData.assetName || h.object.name || 'Server Room equipment');
+    const key = name.toLowerCase();
+    UI.app = /fiber|odf|patch|connector|link|topology/.test(key) ? 'topo'
+      : /nce|management/.test(key) ? 'nce'
+      : /cli|terminal|command/.test(key) ? 'cli'
+      : /rack|shelf|chassis|board|card|server|osn|optix/.test(key) ? 'racks' : 'lct';
+    UI.menu = null;
+    toast('Selected Server Room equipment: ' + name + ' · opened ' + ({topo:'Topology',nce:'NCE-T',cli:'CLI',racks:'Racks',lct:'Web LCT'}[UI.app]));
+    draw();
+  }
+}
 let down = null, dragging = false; const cvs = renderer.domElement;
 cvs.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY, yaw, pitch }; dragging = false; });
 addEventListener('pointerup', e => { if (down && !dragging && !renderer.xr.isPresenting) { ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); raycaster.setFromCamera(ndc, camera); handleSelect(raycaster.intersectObjects(pickables, false)[0]); } down = null; });
