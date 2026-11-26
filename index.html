@@ -5408,6 +5408,23 @@
     }
 
   </style>
+  <style>
+    .ots-link-hotspots{position:absolute;inset:0;width:100%;height:100%;z-index:3;overflow:visible;pointer-events:none}
+    .ots-route-hit{fill:none;stroke:transparent;stroke-width:34;stroke-linecap:round;stroke-linejoin:round;pointer-events:stroke;cursor:pointer;outline:none}
+    .ots-route-hit:focus{stroke:rgba(255,255,255,.18);stroke-width:22;filter:drop-shadow(0 0 8px white)}
+    .ots-link-info{position:fixed;z-index:6;top:clamp(145px,21vh,205px);right:clamp(16px,4vw,64px);width:min(390px,calc(100vw - 32px));padding:20px 20px 16px;border:1px solid rgba(80,213,255,.55);border-radius:16px;background:rgba(3,18,31,.94);color:#effaff;box-shadow:0 18px 55px rgba(0,0,0,.5);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+    .ots-link-info[hidden]{display:none}
+    .ots-link-kicker{font-size:9px;letter-spacing:.2em;font-weight:800;color:#5edcff;margin-bottom:8px}
+    .ots-link-info h3{font:750 22px/1.15 Outfit,Inter,sans-serif;margin:0 24px 10px 0}
+    .ots-link-info p{font-size:12px;line-height:1.65;color:#c0d5e2;margin:0}
+    .ots-link-close{position:absolute;right:12px;top:8px;border:0;background:transparent;color:#bceeff;font-size:27px;cursor:pointer}
+    .ots-audio-controls{display:flex;flex-wrap:wrap;gap:7px;margin-top:15px}
+    .ots-audio-controls button{border:1px solid rgba(95,208,245,.4);border-radius:8px;background:rgba(16,75,99,.7);color:#eafaff;padding:8px 11px;font-size:11px;font-weight:700;cursor:pointer}
+    .ots-audio-controls button:first-child{background:#14b9e8;color:#041722;border-color:#14b9e8}
+    .ots-link-info .ots-audio-note{font-size:9px;color:#7f9fb1;margin-top:10px}
+    @media(max-width:620px){.ots-link-info{top:110px;right:12px;left:12px;width:auto;padding:15px}.ots-link-info h3{font-size:19px}}
+  </style>
+
   <section id="site-selection-screen" aria-label="Optical Transmission site selection" aria-hidden="true">
     <div class="ots-wrap">
       <div class="ots-topline"><span>OPTICAL TRANSMISSION · NETWORK OVERVIEW</span><span class="ots-live">SITE SELECTION</span></div>
@@ -5417,8 +5434,24 @@
       </div>
       <div class="ots-map-frame">
         <img class="ots-map-image" src="https://raw.githubusercontent.com/maheshkota1906/Optical-Transmission/main/Neon%20Mountain%20Network%20Site%20Selection.png" alt="Neon Mountain Network Site Selection map showing the AQ and HA network sites" loading="eager">
+        <svg class="ots-link-hotspots" viewBox="0 0 1750 875" preserveAspectRatio="xMidYMid slice" role="group" aria-label="Interactive network routes">
+          <path class="ots-route-hit" data-route="primary" d="M331 507 L475 436 L645 365 L955 365 L1275 450 L1420 522" tabindex="0" role="button" aria-label="Primary optical transmission link: show description and audio"></path>
+          <path class="ots-route-hit" data-route="backup" d="M414 548 L586 601 L868 566 L1143 599 L1294 568 L1420 522" tabindex="0" role="button" aria-label="Backup protection link: show description and audio"></path>
+        </svg>
         <div class="ots-map-caption"><span>Network site selection map</span><span>Choose one location below</span></div>
       </div>
+      <aside id="ots-link-info" class="ots-link-info" aria-live="polite" hidden>
+        <button type="button" id="ots-link-close" class="ots-link-close" aria-label="Close route details">×</button>
+        <div class="ots-link-kicker" id="ots-link-kicker">NETWORK ROUTE</div>
+        <h3 id="ots-link-title">Primary Optical Transmission Link</h3>
+        <p id="ots-link-description"></p>
+        <div class="ots-audio-controls">
+          <button type="button" id="ots-audio-play">▶ Play audio</button>
+          <button type="button" id="ots-audio-pause">Ⅱ Pause</button>
+          <button type="button" id="ots-audio-stop">■ Stop</button>
+        </div>
+        <p class="ots-audio-note">Audio narration uses your browser's text-to-speech voice.</p>
+      </aside>
       <div class="ots-choice-label">Choose a destination</div>
       <div class="ots-site-grid">
         <button class="ots-site-button" type="button" data-optical-site="AQ" aria-label="Enter AQ site">
@@ -5445,8 +5478,70 @@
         siteScreen.setAttribute('aria-hidden', 'false');
       }, true);
 
+      const routeInfo = document.getElementById('ots-link-info');
+      const routeTitle = document.getElementById('ots-link-title');
+      const routeDescription = document.getElementById('ots-link-description');
+      const routeKicker = document.getElementById('ots-link-kicker');
+      const routeCopy = {
+        primary: {
+          kicker: 'BLUE ROUTE · PRIMARY PATH',
+          title: 'Primary Optical Transmission Link',
+          description: 'The blue route represents the primary optical transmission path between the AQ and HA sites. It is the preferred route for carrying network traffic during normal operation. Its capacity, equipment and actual routing depend on the network design.'
+        },
+        backup: {
+          kicker: 'YELLOW ROUTE · BACKUP / PROTECTION PATH',
+          title: 'Backup & Protection Link',
+          description: 'The yellow route represents the alternate backup or protection path between the AQ and HA sites. It provides an alternative route when the primary path is unavailable or undergoing maintenance. Traffic switching and protection behaviour depend on the configured network design.'
+        }
+      };
+      let activeNarration = null;
+      const stopNarration = () => {
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        activeNarration = null;
+      };
+      const openRouteInfo = routeKey => {
+        const info = routeCopy[routeKey];
+        if (!info || !routeInfo) return;
+        stopNarration();
+        routeKicker.textContent = info.kicker;
+        routeTitle.textContent = info.title;
+        routeDescription.textContent = info.description;
+        routeInfo.hidden = false;
+      };
+      siteScreen.querySelectorAll('.ots-route-hit').forEach(path => {
+        path.addEventListener('click', () => openRouteInfo(path.dataset.route));
+        path.addEventListener('keydown', event => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openRouteInfo(path.dataset.route);
+          }
+        });
+      });
+      document.getElementById('ots-link-close')?.addEventListener('click', () => {
+        routeInfo.hidden = true;
+        stopNarration();
+      });
+      document.getElementById('ots-audio-play')?.addEventListener('click', () => {
+        if (!('speechSynthesis' in window)) {
+          routeDescription.textContent += ' (Text-to-speech is not supported by this browser.)';
+          return;
+        }
+        stopNarration();
+        activeNarration = new SpeechSynthesisUtterance(routeTitle.textContent + '. ' + routeDescription.textContent);
+        activeNarration.rate = 0.92;
+        window.speechSynthesis.speak(activeNarration);
+      });
+      document.getElementById('ots-audio-pause')?.addEventListener('click', () => {
+        if (!('speechSynthesis' in window)) return;
+        if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+        else window.speechSynthesis.pause();
+      });
+      document.getElementById('ots-audio-stop')?.addEventListener('click', stopNarration);
+
       siteScreen.querySelectorAll('[data-optical-site]').forEach(button => {
         button.addEventListener('click', async () => {
+          if (routeInfo) routeInfo.hidden = true;
+          stopNarration();
           const site = button.dataset.opticalSite === 'HA' ? 'HA' : 'AQ';
           window.selectedOpticalSite = site;
           document.documentElement.dataset.opticalSite = site.toLowerCase();
