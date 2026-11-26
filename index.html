@@ -2330,6 +2330,71 @@
       return true;
     }
 
+    /* Find a clear floor point inside a room GLB, never outside its entrance. */
+    applyInteriorRoomSpawn(level, model) {
+      model.updateMatrixWorld(true);
+      const bounds = new THREE.Box3().setFromObject(model);
+      if (bounds.isEmpty()) throw new Error('Server Room GLB has no measurable bounds.');
+      const size = bounds.getSize(new THREE.Vector3());
+      const center = bounds.getCenter(new THREE.Vector3());
+      const floorBase = bounds.min.y;
+      const raycaster = new THREE.Raycaster();
+      const down = new THREE.Vector3(0, -1, 0);
+      const up = new THREE.Vector3(0, 1, 0);
+      const candidates = [];
+      const fractions = [0.28, 0.39, 0.5, 0.61, 0.72];
+      const floorProbeTop = floorBase + Math.max(0.55, level.eyeHeight * 0.42);
+      const floorTolerance = Math.max(0.35, size.y * 0.025);
+      for (const fx of fractions) {
+        for (const fz of fractions) {
+          const x = bounds.min.x + size.x * fx;
+          const z = bounds.min.z + size.z * fz;
+          raycaster.set(new THREE.Vector3(x, floorProbeTop, z), down);
+          raycaster.far = Math.max(1.2, floorProbeTop - floorBase + 0.4);
+          const floorHit = raycaster.intersectObject(model, true).find(hit =>
+            hit.object.visible && !hit.object.userData.isOutline &&
+            hit.point.y >= floorBase - 0.08 &&
+            hit.point.y <= floorBase + floorTolerance
+          );
+          if (!floorHit) continue;
+          const floorPoint = floorHit.point.clone();
+          raycaster.set(floorPoint.clone().add(new THREE.Vector3(0, 0.12, 0)), up);
+          raycaster.far = Math.max(1.2, level.eyeHeight - 0.18);
+          const obstruction = raycaster.intersectObject(model, true).find(hit =>
+            hit.object.visible && !hit.object.userData.isOutline &&
+            hit.distance < level.eyeHeight - 0.2
+          );
+          if (obstruction) continue;
+          const dx = (x - center.x) / Math.max(size.x, 0.001);
+          const dz = (z - center.z) / Math.max(size.z, 0.001);
+          candidates.push({ point: floorPoint, score: dx * dx + dz * dz });
+        }
+      }
+      candidates.sort((a, b) => a.score - b.score);
+      let floorPoint;
+      if (candidates.length) {
+        floorPoint = candidates[0].point;
+      } else {
+        // Conservative fallback: use the room's interior centre at floor level.
+        floorPoint = new THREE.Vector3(center.x, floorBase, center.z);
+        console.warn('[Walkthrough] No unobstructed floor grid point found; using the room interior centre.');
+      }
+      const insetX = Math.min(Math.max(APP_CONFIG.playerRadius + 0.2, size.x * 0.08), size.x * 0.22);
+      const insetZ = Math.min(Math.max(APP_CONFIG.playerRadius + 0.2, size.z * 0.08), size.z * 0.22);
+      level.floorY = floorPoint.y;
+      level.eyeHeight = APP_CONFIG.eyeHeight;
+      level.spawnPosition.set(floorPoint.x, floorPoint.y + level.eyeHeight, floorPoint.z);
+      level.spawnYaw = 0;
+      level.spawnPitch = 0;
+      level.startCameraName = 'ServerRoom_Interior_FloorSpawn';
+      level.roomBounds.set(
+        new THREE.Vector3(bounds.min.x + insetX, bounds.min.y - 0.5, bounds.min.z + insetZ),
+        new THREE.Vector3(bounds.max.x - insetX, bounds.max.y + 4, bounds.max.z - insetZ)
+      );
+      console.info('[Walkthrough] Server Room interior spawn:', level.spawnPosition.toArray(), 'floor:', floorPoint.toArray(), 'valid floor candidates:', candidates.length);
+      return true;
+    }
+
     /* Automatically place the player just outside the main gate/entrance when no authored start camera is configured. */
     applyGateSpawn(level, model) {
       const sceneBox = new THREE.Box3().setFromObject(model);
@@ -2455,9 +2520,12 @@
 
       // For uploaded GLBs, prefer the detected main gate/entrance unless the
       // designer explicitly supplied a startCamera in the config.
-      const camName = (cfg && cfg.startCamera)
-        ? this.applyStartCamera(level, model, cfg)
-        : (this.applyGateSpawn(level, model) || this.applyStartCamera(level, model, cfg));
+      const isServerRoomAsset = /ServerRoom_Optimized_under20MB\.glb/i.test(String(fileName || ''));
+      const camName = isServerRoomAsset
+        ? (this.applyInteriorRoomSpawn(level, model), level.startCameraName)
+        : ((cfg && cfg.startCamera)
+          ? this.applyStartCamera(level, model, cfg)
+          : (this.applyGateSpawn(level, model) || this.applyStartCamera(level, model, cfg)));
 
       if (gltf.animations && gltf.animations.length > 0) {
         level.mixer = new THREE.AnimationMixer(model);
