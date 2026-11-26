@@ -299,6 +299,19 @@
     #gc-detail{border-top:1px solid #34383c;padding:.85rem 1rem;background:#131619;max-height:48%;overflow:auto}.gc-detail-kicker{font:9px monospace;letter-spacing:.18em;color:#f45113;text-transform:uppercase}.gc-detail-title{font-size:15px;font-weight:700;margin:.35rem 0}.gc-detail-copy{font-size:11px;line-height:1.5;color:#bdc4cc}.gc-checks{display:grid;gap:.4rem;margin:.7rem 0}.gc-check{display:flex;align-items:flex-start;gap:.45rem;font-size:10px;line-height:1.4;color:#e1e5e9}.gc-check input{accent-color:#f45113;margin-top:2px}.gc-warning{font-size:9px;color:#f7b99b;line-height:1.4;margin:.45rem 0}.gc-actions{display:flex;gap:.5rem}.gc-action{flex:1;padding:.55rem .45rem;font-size:10px;font-weight:700;border:1px solid #454b51;background:#202428;color:#fff;cursor:pointer}.gc-action.primary{background:#f45113;color:#111;border-color:#f45113}.gc-action:disabled{opacity:.35;cursor:not-allowed}
     @media(max-width:640px){#guided-climb-toggle{top:auto;bottom:1rem;left:1rem}#guided-climb{top:4.7rem;bottom:4.4rem;width:min(290px,calc(100vw - 2rem))}}
   </style>
+
+  <style>
+    #hcia-room-console{position:fixed;z-index:70;right:18px;top:18px;display:flex;align-items:center;gap:9px;padding:11px 16px;border:1px solid rgba(103,214,255,.55);border-radius:12px;background:rgba(4,26,43,.94);color:#e8f8ff;font:700 12px Inter,Arial,sans-serif;box-shadow:0 10px 35px rgba(0,0,0,.28);cursor:pointer}
+    #hcia-room-console[hidden]{display:none}
+    #hcia-room-console:hover{background:#075477}
+    #hcia-room-console i{color:#56d5ff}
+    #hcia-embed-overlay{position:fixed;inset:0;z-index:200;display:none;background:rgba(1,8,18,.88);backdrop-filter:blur(8px)}
+    #hcia-embed-overlay.is-open{display:block}
+    #hcia-embed-bar{position:absolute;z-index:2;left:0;right:0;top:0;height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:#061a35;border-bottom:1px solid rgba(103,214,255,.25);color:#eaf8ff;font:600 13px Inter,Arial,sans-serif}
+    #hcia-embed-bar button{border:1px solid rgba(103,214,255,.4);border-radius:8px;padding:6px 12px;background:#0b4770;color:white;cursor:pointer}
+    #hcia-embed-frame{position:absolute;inset:48px 0 0;width:100%;height:calc(100% - 48px);border:0;background:#020d24}
+    @media(max-width:640px){#hcia-room-console{top:auto;right:12px;bottom:18px;padding:10px 12px}#hcia-room-console span{display:none}}
+  </style>
 </head>
 <body class="h-full w-full relative">
 
@@ -534,6 +547,9 @@
           <span id="obj-sku" class="font-mono"></span><span id="obj-maker"></span><span id="obj-dims" class="font-mono"></span>
         </div>
         <button id="anim-btn" class="hidden w-full py-2 px-3 sel-chip font-medium text-xs rounded-lg items-center justify-center gap-1.5" aria-label="Play animation"><i id="anim-icon" class="fa-solid fa-play text-xs"></i><span id="anim-label">Play animation</span></button>
+        <button type="button" id="open-hcia-equipment-btn" class="w-full py-2.5 px-3 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs flex items-center justify-center gap-2">
+          <i class="fa-solid fa-network-wired"></i><span>Open HCIA tools for this equipment</span>
+        </button>
 
         <!-- Focus & Camera Zoom Controls -->
         <div class="pt-2 border-t border-neutral-200/80 space-y-2">
@@ -2037,6 +2053,10 @@
           const startPage=document.getElementById('start-page');if(startPage){startPage.classList.add('opacity-0');startPage.style.pointerEvents='none';setTimeout(()=>{startPage.style.display='none';},400);}
           const siteScreen=document.getElementById('site-selection-screen');if(siteScreen){siteScreen.classList.remove('is-open');siteScreen.setAttribute('aria-hidden','true');}
           const roomScreen=document.getElementById('room-selection-screen');if(roomScreen){roomScreen.classList.remove('is-open');roomScreen.setAttribute('aria-hidden','true');}
+          if (code === 'AQ') {
+            const trainingButton = document.getElementById('hcia-room-console');
+            if (trainingButton) trainingButton.hidden = false;
+          }
           if(!this.isTouchCapableDevice&&this.pointerControls)this.pointerControls.lock();
           return this.currentLevel;
         }
@@ -3395,6 +3415,12 @@
       });
 
       document.getElementById('close-inspector-btn').addEventListener('click', () => this.deselectProduct(true));
+      document.getElementById('open-hcia-equipment-btn').addEventListener('click', () => {
+        const product = this.selectedProduct;
+        if (product && typeof window.openHciaTraining === 'function') {
+          window.openHciaTraining(window.hciaAppForEquipment(product));
+        }
+      });
       document.getElementById('deselect-obj-btn').addEventListener('click', () => this.deselectProduct(true));
       
       document.getElementById('focus-obj-btn').addEventListener('click', () => {
@@ -5660,6 +5686,50 @@
           await app.openOpticalSampleRoom(site, site === 'AQ' ? 'optical' : 'server');
         });
       });
+    })();
+  </script>
+
+  <button type="button" id="hcia-room-console" hidden title="Open HCIA-Transmission training console">
+    <i class="fa-solid fa-network-wired"></i><span>HCIA Training Console</span>
+  </button>
+  <section id="hcia-embed-overlay" aria-hidden="true" aria-label="HCIA-Transmission training console">
+    <div id="hcia-embed-bar"><span>HCIA-TRANSMISSION · ROOM TRAINING CONSOLE</span><button type="button" id="hcia-embed-close">← Return to 3D Room</button></div>
+    <iframe id="hcia-embed-frame" title="HCIA-Transmission configuration tools" allow="clipboard-read; clipboard-write"></iframe>
+  </section>
+  <script>
+    (() => {
+      const overlay = document.getElementById('hcia-embed-overlay');
+      const frame = document.getElementById('hcia-embed-frame');
+      const close = () => {
+        overlay.classList.remove('is-open');
+        overlay.setAttribute('aria-hidden','true');
+        if (frame) frame.src = 'about:blank';
+        const app = window.app;
+        if (app && app.currentState === AppState.EXPLORE && !app.isTouchCapableDevice && app.pointerControls) app.pointerControls.lock();
+      };
+      window.hciaAppForEquipment = product => {
+        const name = String(product && product.name || '').toLowerCase();
+        const category = String(product && product.category || '').toLowerCase();
+        const value = name + ' ' + category;
+        if (/fiber|odf|patch|connector|link|topology/.test(value)) return 'topo';
+        if (/nce|network management|management system/.test(value)) return 'nce';
+        if (/cli|terminal|command/.test(value)) return 'cli';
+        if (/rack|shelf|board|chassis|optical|transmission|osn|server/.test(value)) return 'lct';
+        return 'home';
+      };
+      window.openHciaTraining = appName => {
+        if (!overlay || !frame) return;
+        const allowed = ['home','brief','lct','nce','cli','topo','racks'];
+        const selected = allowed.includes(appName) ? appName : 'home';
+        const app = window.app;
+        if (app && app.pointerControls && app.pointerControls.isLocked) app.pointerControls.unlock();
+        frame.src = 'hcia-transmission-vr-lab.html?embed=1&app=' + encodeURIComponent(selected);
+        overlay.classList.add('is-open');
+        overlay.setAttribute('aria-hidden','false');
+      };
+      document.getElementById('hcia-room-console')?.addEventListener('click', () => window.openHciaTraining('home'));
+      document.getElementById('hcia-embed-close')?.addEventListener('click', close);
+      window.addEventListener('keydown', event => { if (event.key === 'Escape' && overlay.classList.contains('is-open')) close(); });
     })();
   </script>
 </body>
