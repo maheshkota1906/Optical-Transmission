@@ -1982,13 +1982,34 @@
         server: 'Server Room', ups: 'UPS & Battery Room', monitoring: 'Network Monitoring Room'
       };
       const levelName = code === 'AQ' ? 'AQ Site · Optical Transmission Room' : 'HA Site · Server Room';
-      const replacementPath = 'Assets/Rooms/' + code + '_' + key + '_Room.glb';
+      const replacementPath = code === 'AQ' ? 'Assets/Rooms/ServerRoom_Optimized_under20MB.glb' : ('Assets/Rooms/' + code + '_' + key + '_Room.glb');
       try {
         const replacementUrl = new URL(replacementPath, location.href);
         const response = await fetch(replacementUrl.href, { cache: 'no-cache' });
         if (response.ok) {
           this.showLoading('Loading ' + roomNames[key], 'Loading your replacement GLB...');
           await this.parseAndSetup(await response.arrayBuffer(), new URL('.', replacementUrl).href, null, replacementPath.split('/').pop());
+          if (code === 'AQ' && this.currentLevel) {
+            // Place the player inside the optimized AQ room, on its grounded floor.
+            const roomBounds = new THREE.Box3().setFromObject(this.currentLevel.rootGroup);
+            if (roomBounds.isEmpty()) throw new Error('The AQ ServerRoom GLB contains no measurable room geometry.');
+            const roomSize = roomBounds.getSize(new THREE.Vector3());
+            const inset = Math.min(APP_CONFIG.playerRadius + 0.2, Math.max(0.15, Math.min(roomSize.x, roomSize.z) * 0.12));
+            this.currentLevel.floorY = roomBounds.min.y;
+            this.currentLevel.spawnPosition.set(
+              (roomBounds.min.x + roomBounds.max.x) * 0.5,
+              roomBounds.min.y + this.currentLevel.eyeHeight,
+              (roomBounds.min.z + roomBounds.max.z) * 0.5
+            );
+            this.currentLevel.spawnYaw = 0;
+            this.currentLevel.spawnPitch = 0;
+            this.currentLevel.roomBounds.set(
+              new THREE.Vector3(roomBounds.min.x + inset, roomBounds.min.y - 1, roomBounds.min.z + inset),
+              new THREE.Vector3(roomBounds.max.x - inset, roomBounds.max.y + 4, roomBounds.max.z - inset)
+            );
+            this.resetCameraToLevelSpawn();
+            console.info('[Optical Transmission] AQ player spawn inside optimized ServerRoom:', this.currentLevel.spawnPosition.toArray());
+          }
           this.hideLoading();
           this.setAppState(AppState.EXPLORE);
           const startPage=document.getElementById('start-page');if(startPage){startPage.classList.add('opacity-0');startPage.style.pointerEvents='none';setTimeout(()=>{startPage.style.display='none';},400);}
@@ -1998,7 +2019,18 @@
           return this.currentLevel;
         }
       } catch (err) {
-        console.warn('[Optical Transmission] Replacement GLB unavailable; using procedural sample geometry.', err);
+        console.error('[Optical Transmission] Could not load the AQ ServerRoom GLB:', err);
+        this.hideLoading();
+        if (code === 'AQ') {
+          alert('AQ Server Room could not be loaded. Check that Assets/Rooms/ServerRoom_Optimized_under20MB.glb is available in the deployed site.');
+          return null;
+        }
+        console.warn('[Optical Transmission] Replacement GLB unavailable; using procedural sample geometry for HA.', err);
+      }
+      if (code === 'AQ') {
+        this.hideLoading();
+        alert('AQ Server Room GLB was not found. Check the Assets/Rooms/ServerRoom_Optimized_under20MB.glb path.');
+        return null;
       }
       const level = new Level('sample-' + code.toLowerCase() + '-' + key, levelName);
       const root = level.rootGroup;
