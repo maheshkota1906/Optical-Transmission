@@ -1,177 +1,122 @@
 (() => {
   'use strict';
+
   const EMBED_URL = 'hcia-transmission-vr-lab.html?embed=1&app=home';
-  const TW = 1280, TH = 800, UPDATE_MS = 66;
 
-  window.addEventListener('DOMContentLoaded', function () {
-    const app = window.app;
-    if (!app || !app.camera || !app.renderer || !window.THREE) return;
-    const T = window.THREE;
+  function boot() {
+    let tries = 0;
+    const waitForApp = () => {
+      const app = window.app;
+      if (!app || !app.camera || !app.renderer || !window.THREE) {
+        if (++tries < 150) window.setTimeout(waitForApp, 100);
+        else console.error('[HCIA UI] Walkthrough app was not ready; floating UI was not initialized.');
+        return;
+      }
+      if (window.__hciaFloatingUI) return;
 
-    const iframe = document.createElement('iframe');
-    iframe.title = 'HCIA Transmission client interface';
-    iframe.tabIndex = -1;
-    Object.assign(iframe.style, {
-      position: 'fixed', left: '0', top: '0', width: '1600px', height: '1000px',
-      border: '0', opacity: '0', pointerEvents: 'none', zIndex: '-1'
-    });
-    iframe.src = EMBED_URL;
-    document.body.appendChild(iframe);
+      // Use a native same-origin iframe panel. This keeps the client UI fully
+      // interactive and avoids fragile canvas-texture/pointer-event forwarding.
+      const panel = document.createElement('section');
+      panel.id = 'hcia-floating-panel';
+      panel.setAttribute('aria-label', 'HCIA Transmission interactive interface');
+      panel.style.cssText = [
+        'position:fixed', 'right:clamp(12px,2vw,30px)', 'top:50%',
+        'transform:translateY(-50%)', 'width:min(1080px,88vw)',
+        'height:min(720px,82vh)', 'min-width:min(320px,94vw)',
+        'min-height:min(320px,70vh)', 'display:none', 'flex-direction:column',
+        'overflow:hidden', 'z-index:120', 'border:1px solid rgba(75,190,235,.72)',
+        'border-radius:14px', 'background:#06183a',
+        'box-shadow:0 18px 60px rgba(0,0,0,.58)'
+      ].join(';');
 
-    const textureCanvas = document.createElement('canvas');
-    textureCanvas.width = TW; textureCanvas.height = TH;
-    const textureContext = textureCanvas.getContext('2d', { alpha: false });
-    const texture = new T.CanvasTexture(textureCanvas);
-    texture.encoding = T.sRGBEncoding;
-    texture.minFilter = T.LinearFilter;
-    texture.magFilter = T.LinearFilter;
-    texture.generateMipmaps = false;
+      const bar = document.createElement('div');
+      bar.style.cssText = 'height:42px;flex:0 0 42px;display:flex;align-items:center;justify-content:space-between;padding:0 12px 0 16px;background:linear-gradient(90deg,#082b4b,#0b4164);color:#eafaff;font:700 12px Inter,Arial,sans-serif;letter-spacing:.04em';
+      const heading = document.createElement('span');
+      heading.textContent = 'HCIA TRANSMISSION · INTERACTIVE LAB';
+      const close = document.createElement('button');
+      close.type = 'button';
+      close.textContent = '✕  Close';
+      close.setAttribute('aria-label', 'Close HCIA interface');
+      close.style.cssText = 'border:1px solid rgba(190,230,255,.35);border-radius:7px;background:rgba(2,18,35,.72);color:#fff;padding:6px 10px;font:600 12px Inter,Arial,sans-serif;cursor:pointer';
+      bar.append(heading, close);
 
-    const frame = new T.Mesh(
-      new T.PlaneGeometry(1.43, 0.895),
-      new T.MeshBasicMaterial({ color: 0x06183a, toneMapped: false, side: T.DoubleSide, depthTest: false, depthWrite: false })
-    );
-    frame.position.z = -0.012; frame.renderOrder = 9998;
-    const screen = new T.Mesh(
-      new T.PlaneGeometry(1.38, 0.8625),
-      new T.MeshBasicMaterial({ map: texture, toneMapped: false, side: T.DoubleSide, depthTest: false, depthWrite: false })
-    );
-    screen.position.z = 0.008; screen.renderOrder = 9999;
-    const root = new T.Group();
-    root.name = 'HCIA_Client_Floating_UI';
-    root.position.set(0, -0.025, -1.52);
-    root.add(frame, screen);
-    root.visible = false;
-    app.camera.add(root);
+      const iframe = document.createElement('iframe');
+      iframe.title = 'HCIA Transmission interactive lab';
+      iframe.src = EMBED_URL;
+      iframe.allow = 'clipboard-read; clipboard-write';
+      iframe.style.cssText = 'display:block;flex:1 1 auto;width:100%;height:calc(100% - 42px);min-height:0;border:0;background:#06183a';
+      panel.append(bar, iframe);
+      document.body.appendChild(panel);
 
-    const toggle = document.createElement('button');
-    toggle.type = 'button'; toggle.textContent = 'Open HCIA Lab UI'; toggle.hidden = true;
-    toggle.style.cssText = 'position:fixed;right:18px;top:82px;z-index:65;padding:10px 15px;border:1px solid rgba(92,205,245,.55);border-radius:10px;background:rgba(5,28,55,.94);color:#eafaff;font:700 12px Inter,Arial,sans-serif;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.28)';
-    document.body.appendChild(toggle);
+      const toggle = document.createElement('button');
+      toggle.id = 'hcia-floating-toggle';
+      toggle.type = 'button';
+      toggle.textContent = 'Show HCIA Lab UI';
+      toggle.hidden = true;
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.style.cssText = 'position:fixed;right:18px;top:82px;z-index:121;padding:10px 15px;border:1px solid rgba(92,205,245,.65);border-radius:10px;background:rgba(5,28,55,.96);color:#eafaff;font:700 12px Inter,Arial,sans-serif;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.32)';
+      document.body.appendChild(toggle);
 
-    let sourceCanvas = null, connected = false, panelEnabled = true;
-    let lastFrame = 0, attempts = 0, panelDown = false, suppressClick = false, pointerInside = false;
-
-    function setVisible(on) {
-      panelEnabled = !!on;
-      root.visible = panelEnabled && app.currentState === 'explore';
-      toggle.textContent = root.visible ? 'Hide HCIA Lab UI' : 'Open HCIA Lab UI';
-      toggle.setAttribute('aria-pressed', String(root.visible));
-      if (root.visible && app.pointerControls && app.pointerControls.isLocked) app.pointerControls.unlock();
-    }
-    toggle.addEventListener('click', function () { setVisible(!root.visible); });
-
-    if (app.pointerControls && app.pointerControls.lock) {
-      const oldLock = app.pointerControls.lock.bind(app.pointerControls);
-      app.pointerControls.lock = function () { if (!root.visible) oldLock(); };
-    }
-
-    const oldState = app.setAppState.bind(app);
-    app.setAppState = function (nextState) {
-      const result = oldState.apply(app, arguments);
-      const exploring = nextState === 'explore';
-      toggle.hidden = !exploring;
-      if (exploring) setVisible(panelEnabled);
-      else { root.visible = false; toggle.textContent = 'Open HCIA Lab UI'; }
-      return result;
-    };
-
-    function connect() {
-      if (connected) return;
-      try {
-        const doc = iframe.contentDocument;
-        const sim = iframe.contentWindow && iframe.contentWindow.__sim;
-        const c = doc && doc.querySelector('#ws2d canvas');
-        if (!sim || !c || c.width < 2 || c.height < 2) {
-          if (++attempts < 300) setTimeout(connect, 100);
-          return;
+      let isOpen = false;
+      function setOpen(open) {
+        isOpen = !!open;
+        panel.style.display = isOpen ? 'flex' : 'none';
+        toggle.textContent = isOpen ? 'Hide HCIA Lab UI' : 'Show HCIA Lab UI';
+        toggle.setAttribute('aria-expanded', String(isOpen));
+        if (isOpen && app.pointerControls && app.pointerControls.isLocked) {
+          app.pointerControls.unlock();
         }
-        c.toDataURL('image/png');
-        sourceCanvas = c; connected = true;
-        console.info('[HCIA UI] Client canvas connected to the floating room panel.');
-        if (app.currentState === 'explore') { toggle.hidden = false; setVisible(panelEnabled); }
-      } catch (err) {
-        console.error('[HCIA UI] Client canvas access failed; both pages must share the same origin.', err);
       }
-    }
-    iframe.addEventListener('load', function () { setTimeout(connect, 100); });
-    setTimeout(connect, 250);
 
-    function hitPanel(event) {
-      if (!root.visible || !connected) return null;
-      const bounds = app.renderer.domElement.getBoundingClientRect();
-      const locked = app.pointerControls && app.pointerControls.isLocked;
-      const x = locked ? 0 : ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
-      const y = locked ? 0 : -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
-      const ray = new T.Raycaster();
-      app.camera.updateMatrixWorld(true);
-      ray.setFromCamera(new T.Vector2(x, y), app.camera);
-      return ray.intersectObject(screen, false)[0] || null;
-    }
+      toggle.addEventListener('click', () => setOpen(!isOpen));
+      close.addEventListener('click', () => setOpen(false));
 
-    function send(type, hit) {
-      if (!sourceCanvas || !hit || !hit.uv) return;
-      const w = iframe.contentWindow, r = sourceCanvas.getBoundingClientRect();
-      const x = r.left + hit.uv.x * r.width, y = r.top + (1 - hit.uv.y) * r.height;
-      const base = { bubbles: true, cancelable: true, clientX: x, clientY: y, button: 0 };
-      if (type === 'move') {
-        sourceCanvas.dispatchEvent(new w.PointerEvent('pointermove', Object.assign({}, base, { pointerId: 1, pointerType: 'mouse', isPrimary: true, buttons: 0 })));
-      } else if (type === 'click') {
-        sourceCanvas.dispatchEvent(new w.MouseEvent('click', base));
-        try { w.focus(); } catch (_) {}
-      } else if (type === 'leave') {
-        sourceCanvas.dispatchEvent(new w.PointerEvent('pointerleave', Object.assign({}, base, { pointerId: 1, pointerType: 'mouse', isPrimary: true })));
+      const originalSetAppState = app.setAppState.bind(app);
+      app.setAppState = function (nextState) {
+        const result = originalSetAppState.apply(app, arguments);
+        const exploring = nextState === 'explore';
+        toggle.hidden = !exploring;
+        if (!exploring) setOpen(false);
+        return result;
+      };
+
+      // Do not let the walkthrough re-lock the mouse while the HCIA panel is open.
+      if (app.pointerControls && typeof app.pointerControls.lock === 'function') {
+        const originalLock = app.pointerControls.lock.bind(app.pointerControls);
+        app.pointerControls.lock = function () {
+          if (!isOpen) return originalLock();
+        };
       }
-    }
 
-    const canvas = app.renderer.domElement;
-    window.addEventListener('pointermove', function (e) {
-      if (!root.visible || e.target !== canvas) return;
-      const h = hitPanel(e);
-      if (h) {
-        pointerInside = true; send('move', h); canvas.style.cursor = 'pointer';
-        e.stopImmediatePropagation();
-      } else if (pointerInside) {
-        pointerInside = false; send('leave'); canvas.style.cursor = '';
-      }
-    }, true);
+      if (app.currentState === 'explore') toggle.hidden = false;
 
-    window.addEventListener('pointerdown', function (e) {
-      if (!root.visible || e.target !== canvas || e.button !== 0) return;
-      const h = hitPanel(e); if (!h) return;
-      panelDown = true; send('move', h);
-      e.preventDefault(); e.stopImmediatePropagation();
-    }, true);
+      window.__hciaFloatingUI = {
+        get visible() { return isOpen; },
+        get connected() { return iframe.contentDocument?.readyState === 'complete'; },
+        show: () => { toggle.hidden = false; setOpen(true); },
+        hide: () => setOpen(false),
+        toggle: () => setOpen(!isOpen),
+        iframe
+      };
 
-    window.addEventListener('pointerup', function (e) {
-      if (!panelDown) return;
-      const h = hitPanel(e);
-      if (h) { send('move', h); send('click', h); } else send('leave');
-      panelDown = false; suppressClick = true;
-      e.preventDefault(); e.stopImmediatePropagation();
-    }, true);
-
-    canvas.addEventListener('click', function (e) {
-      if (!suppressClick) return;
-      suppressClick = false; e.preventDefault(); e.stopImmediatePropagation();
-    }, true);
-
-    function animateTexture(now) {
-      if (root.visible && connected && sourceCanvas && now - lastFrame >= UPDATE_MS) {
+      iframe.addEventListener('load', () => {
         try {
-          textureContext.drawImage(sourceCanvas, 0, 0, TW, TH);
-          texture.needsUpdate = true; lastFrame = now;
-        } catch (err) { console.warn('[HCIA UI] Texture refresh failed:', err); }
-      }
-      requestAnimationFrame(animateTexture);
-    }
-    requestAnimationFrame(animateTexture);
-
-    window.__hciaFloatingUI = {
-      get visible() { return root.visible; },
-      get connected() { return connected; },
-      show: function () { setVisible(true); },
-      hide: function () { setVisible(false); }
+          const style = iframe.contentDocument.createElement('style');
+          style.textContent = '#returnAcademy{display:none!important}';
+          iframe.contentDocument.head.appendChild(style);
+        } catch (error) {
+          console.warn('[HCIA UI] Could not apply embedded-page cleanup:', error);
+        }
+      });
+      console.info('[HCIA UI] Native floating client panel initialized.');
     };
-  });
+
+    waitForApp();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+  } else {
+    boot();
+  }
 })();
