@@ -17,6 +17,9 @@
   body.mode2d #hud, body.mode2d #VRButton{display:none !important}
   body.hcia-embedded.mode2d>canvas{display:none !important}
   body.hcia-embedded #ws2d{z-index:10}
+  body.hcia-embedded #VRButton,
+  body.hcia-embedded #hud,
+  body.hcia-embedded #returnAcademy{display:none !important}
   #importFile{display:none}
 </style>
 <script type="importmap">
@@ -893,7 +896,9 @@ function topBar() {
   const ax = 300, aw = 108, step = 112;
   box(ax - 5, 12, apps.length * step + 6, 48, 'rgba(255,255,255,0.05)', 14); rr(ax - 5, 12, apps.length * step + 6, 48, 14); stroke('rgba(255,255,255,0.08)', 1);
   let x = ax; for (const [k, l] of apps) { const on = UI.app === k; B(x, 17, aw, 38, l, () => { UI.app = k; UI.focus = null; UI.menu = null; draw(); }, { sel: on, selBg: TH[k], bg: '#0A2A5E', id: 'app' + k, size: 16, flat: !on, r: 10, color: on ? '#fff' : '#a5b4c8' }); x += step; }
-  const nav = is2D ? [['3D room ▶', () => set2D(false), '#8C6420']]
+  const embeddedOnly = document.body.classList.contains('hcia-embedded');
+  const nav = embeddedOnly ? []
+    : is2D ? [['3D room ▶', () => set2D(false), '#8C6420']]
     : [['Console', () => goTo('home')], ['Racks ▾', () => openMenu(PW - 360, 62, 220, ['A', 'B', 'C'].map(s => ({ label: `Walk to rack ${s}`, fn: () => goTo(s) })))], [panelLow ? 'Raise ▲' : 'Lower ▼', () => { panelLow = !panelLow; draw(); }], ['2D desk', () => set2D(true), '#8C6420']];
   x = PW - 18; for (let i = nav.length - 1; i >= 0; i--) { const w = is2D ? 150 : 104; x -= w + 6; B(x, 17, w, 38, nav[i][0], nav[i][1], { size: 15, bg: nav[i][2] || '#123E82', id: 'nav' + nav[i][0], r: 10, color: '#D9F4FF' }); }
 }
@@ -1173,7 +1178,7 @@ function appHome() {
   const fy = MY + MH - 74;
   box(MX + 24, fy, MW - 48, 58, '#eef2f7', 12);
   Tx(is2D ? 'You are on the 2D desk.' : 'You are in the 3D rack room.', MX + 44, fy + 25, 15, TH.ink, 700);
-  Tx(is2D ? 'Use "3D room" (top right) for the racks in 3D and ENTER VR.' : 'Use "2D desk" (top right or F9) for a flat, full-screen workspace.', MX + 44, fy + 45, 13, '#475569', 500);
+  Tx(document.body.classList.contains('hcia-embedded') ? 'Choose a tool from the tabs above to explore the transmission interface.' : is2D ? 'Use "3D room" (top right) for the racks in 3D and ENTER VR.' : 'Use "2D desk" (top right or F9) for a flat, full-screen workspace.', MX + 44, fy + 45, 13, '#475569', 500);
   B(MX + MW - 420, fy + 9, 190, 40, '⇩ Export progress', exportProgress, { bg: '#ffffff', color: '#12305F', border: '#cbd5e1', size: 15, id: 'exp' });
   B(MX + MW - 220, fy + 9, 176, 40, '⇧ Import progress', importProgress, { bg: '#ffffff', color: '#12305F', border: '#cbd5e1', size: 15, id: 'imp' });
 }
