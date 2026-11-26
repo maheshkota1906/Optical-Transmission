@@ -117,7 +117,6 @@ try {
   yaw = 0;
   pitch = -0.08;
   camera.rotation.set(pitch, yaw, 0);
-  rigTarget.set(0, 0, 0);
   console.info('[HCIA] Client ServerRoom GLB loaded:', SERVER_ROOM_GLB.href, 'assets:', serverRoomAssets.length, 'bounds:', roomSize.toArray());
   const loadEl = document.getElementById('load');
   if (loadEl) loadEl.remove();
@@ -2296,7 +2295,7 @@ function loop() {
   UI.app = embedded && validApps.includes(requestedApp) ? requestedApp : 'home';
   let view = null; try { view = localStorage.getItem('hciaVRcfg.view'); } catch (e) { }
   if (embedded) document.body.classList.add('hcia-embedded');
-  set2D(embedded || view !== '3d', true);
+  set2D(embedded || view === '2d', true);
   if (!embedded && !view && navigator.xr && navigator.xr.isSessionSupported) navigator.xr.isSessionSupported('immersive-vr').then(ok => { if (ok) set2D(false, true); }).catch(() => { });
 }
 LOGO.onReady.push(() => draw());
